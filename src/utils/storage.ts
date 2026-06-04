@@ -1,0 +1,157 @@
+import * as SecureStore from "expo-secure-store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { STORAGE_KEYS } from "./constants";
+
+export const storage = {
+    async setAccessToken(token: string): Promise<void> {
+        await SecureStore.setItemAsync(STORAGE_KEYS.ACCESS_TOKEN, token);
+    },
+
+    async getAccessToken(): Promise<string | null> {
+        return SecureStore.getItemAsync(STORAGE_KEYS.ACCESS_TOKEN);
+    },
+
+    async setRefreshToken(token: string): Promise<void> {
+        await SecureStore.setItemAsync(STORAGE_KEYS.REFRESH_TOKEN, token);
+    },
+
+    async getRefreshToken(): Promise<string | null> {
+        return SecureStore.getItemAsync(STORAGE_KEYS.REFRESH_TOKEN);
+    },
+
+    async setUser(user: object): Promise<void> {
+        await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+    },
+
+    async getUser<T>(): Promise<T | null> {
+        const data = await AsyncStorage.getItem(STORAGE_KEYS.USER);
+        return data ? JSON.parse(data) : null;
+    },
+
+    async setCfClearance(token: string): Promise<void> {
+        await AsyncStorage.setItem(STORAGE_KEYS.CF_CLEARANCE, token);
+    },
+
+    async getCfClearance(): Promise<string | null> {
+        return AsyncStorage.getItem(STORAGE_KEYS.CF_CLEARANCE);
+    },
+
+    async setCfBm(token: string): Promise<void> {
+        await AsyncStorage.setItem(STORAGE_KEYS.CF_BM, token);
+    },
+
+    async getCfBm(): Promise<string | null> {
+        return AsyncStorage.getItem(STORAGE_KEYS.CF_BM);
+    },
+
+    async setTokenExpiresAt(ts: number): Promise<void> {
+        await AsyncStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRES_AT, String(ts));
+    },
+
+    async getTokenExpiresAt(): Promise<number | null> {
+        const v = await AsyncStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRES_AT);
+        return v ? Number(v) : null;
+    },
+
+    async setUserAgent(ua: string): Promise<void> {
+        await AsyncStorage.setItem(STORAGE_KEYS.USER_AGENT, ua);
+    },
+
+    async getUserAgent(): Promise<string | null> {
+        return AsyncStorage.getItem(STORAGE_KEYS.USER_AGENT);
+    },
+
+    async setDiscoverFilters(filters: object): Promise<void> {
+        await AsyncStorage.setItem(
+            STORAGE_KEYS.DISCOVER_FILTERS,
+            JSON.stringify(filters),
+        );
+    },
+
+    async getDiscoverFilters<T>(): Promise<T | null> {
+        const data = await AsyncStorage.getItem(STORAGE_KEYS.DISCOVER_FILTERS);
+        return data ? JSON.parse(data) : null;
+    },
+
+    async setChatLayout(layout: string): Promise<void> {
+        await AsyncStorage.setItem(STORAGE_KEYS.CHAT_LAYOUT, layout);
+    },
+
+    async getChatLayout(): Promise<string | null> {
+        return AsyncStorage.getItem(STORAGE_KEYS.CHAT_LAYOUT);
+    },
+
+    async setShowTimestamps(show: boolean): Promise<void> {
+        await AsyncStorage.setItem(STORAGE_KEYS.SHOW_TIMESTAMPS, String(show));
+    },
+
+    async getShowTimestamps(): Promise<boolean> {
+        const v = await AsyncStorage.getItem(STORAGE_KEYS.SHOW_TIMESTAMPS);
+        return v === "true";
+    },
+
+    async setAutoFormatEnabled(enabled: boolean): Promise<void> {
+        await AsyncStorage.setItem(
+            STORAGE_KEYS.AUTO_FORMAT_ENABLED,
+            String(enabled),
+        );
+    },
+
+    async getAutoFormatEnabled(): Promise<boolean> {
+        const v = await AsyncStorage.getItem(STORAGE_KEYS.AUTO_FORMAT_ENABLED);
+        return v === "true";
+    },
+
+    async setNarrationWrapper(wrapper: string): Promise<void> {
+        await AsyncStorage.setItem(STORAGE_KEYS.NARRATION_WRAPPER, wrapper);
+    },
+
+    async getNarrationWrapper(): Promise<string> {
+        const v = await AsyncStorage.getItem(STORAGE_KEYS.NARRATION_WRAPPER);
+        return v ?? "*";
+    },
+
+    async setCreateBotState(state: object): Promise<void> {
+        await AsyncStorage.setItem(
+            STORAGE_KEYS.CREATE_BOT_STATE,
+            JSON.stringify(state),
+        );
+    },
+
+    async getCreateBotState<T>(): Promise<T | null> {
+        const data = await AsyncStorage.getItem(STORAGE_KEYS.CREATE_BOT_STATE);
+        return data ? JSON.parse(data) : null;
+    },
+
+    async removeCreateBotState(): Promise<void> {
+        await AsyncStorage.removeItem(STORAGE_KEYS.CREATE_BOT_STATE);
+    },
+
+    async setEditBotState(state: object): Promise<void> {
+        await AsyncStorage.setItem(
+            STORAGE_KEYS.EDIT_BOT_STATE,
+            JSON.stringify(state),
+        );
+    },
+
+    async getEditBotState<T>(): Promise<T | null> {
+        const data = await AsyncStorage.getItem(STORAGE_KEYS.EDIT_BOT_STATE);
+        return data ? JSON.parse(data) : null;
+    },
+
+    async removeEditBotState(): Promise<void> {
+        await AsyncStorage.removeItem(STORAGE_KEYS.EDIT_BOT_STATE);
+    },
+
+    async clearAll(): Promise<void> {
+        await Promise.all([
+            SecureStore.deleteItemAsync(STORAGE_KEYS.ACCESS_TOKEN),
+            SecureStore.deleteItemAsync(STORAGE_KEYS.REFRESH_TOKEN),
+            AsyncStorage.removeItem(STORAGE_KEYS.USER),
+            AsyncStorage.removeItem(STORAGE_KEYS.CF_CLEARANCE),
+            AsyncStorage.removeItem(STORAGE_KEYS.CF_BM),
+            AsyncStorage.removeItem(STORAGE_KEYS.TOKEN_EXPIRES_AT),
+            AsyncStorage.removeItem(STORAGE_KEYS.USER_AGENT),
+        ]);
+    },
+};
