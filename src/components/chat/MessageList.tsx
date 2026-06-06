@@ -298,6 +298,7 @@ export default function MessageList({
   const listRef = useRef<FlashListRef<MessageGroup>>(null);
   const didInitialScrollRef = useRef(false);
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isNearBottomRef = useRef(true);
 
   const groups = useMemo(() => groupMessages(messages), [messages]);
 
@@ -307,23 +308,39 @@ export default function MessageList({
     }
   }, [isLoading]);
 
-  const debouncedScroll = useCallback(() => {
+  const scrollToBottom = useCallback(() => {
     if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
     scrollTimerRef.current = setTimeout(() => {
       listRef.current?.scrollToOffset({ offset: 9999999, animated: false });
     }, 50);
   }, []);
 
+  const handleScroll = useCallback(
+    (event: { nativeEvent: { contentOffset: { y: number }; contentSize: { height: number }; layoutMeasurement: { height: number } } }) => {
+      const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+      const distanceFromBottom =
+        contentSize.height - contentOffset.y - layoutMeasurement.height;
+      isNearBottomRef.current = distanceFromBottom < 200;
+    },
+    [],
+  );
+
   const handleContentSizeChange = useCallback(() => {
     if (!didInitialScrollRef.current) {
       didInitialScrollRef.current = true;
-      debouncedScroll();
+      scrollToBottom();
       setTimeout(() => {
         listRef.current?.scrollToOffset({ offset: 9999999, animated: false });
       }, 300);
+      return;
     }
-    debouncedScroll();
-  }, [debouncedScroll]);
+    // Only auto-scroll when user is following the conversation (near bottom).
+    // Prevents yanking user back to bottom when they scroll up through
+    // older messages and FlashList item recycling triggers size re-measurements.
+    if (isNearBottomRef.current) {
+      scrollToBottom();
+    }
+  }, [scrollToBottom]);
 
   const renderItem = useCallback(
     ({ item, index }: { item: MessageGroup; index: number }) => {
@@ -381,6 +398,8 @@ export default function MessageList({
       getItemType={(item) => (item.isBot ? "bot" : "user")}
       contentContainerStyle={styles.list}
       onContentSizeChange={handleContentSizeChange}
+      onScroll={handleScroll}
+      scrollEventThrottle={16}
       showsVerticalScrollIndicator={false}
       style={styles.flashlist}
     />
