@@ -6,6 +6,8 @@ import {
   StyleSheet,
   Pressable,
   ScrollView,
+  Modal,
+  Switch,
 } from "react-native";
 import {
   type RouteProp,
@@ -21,7 +23,7 @@ import CustomAlert, {
 import type { CharactersStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../stores/authStore";
 import { useChatStore } from "../../stores/chatStore";
-import { getCharacterDetail, deleteCharacter } from "../../api/characters";
+import { getCharacterDetail, deleteCharacter, patchCharacterSettings } from "../../api/characters";
 import {
   getCharacterChats,
   fetchSystemPrompt,
@@ -57,6 +59,8 @@ export default function CharacterScreen() {
   const [alertMessage, setAlertMessage] = useState("");
   const [alertButtons, setAlertButtons] = useState<AlertButton[]>([]);
   const [copyLoading, setCopyLoading] = useState(false);
+  const [settingsVisible, setSettingsVisible] = useState(false);
+  const [settingsSaving, setSettingsSaving] = useState<string | null>(null);
   const user = useAuthStore((s) => s.user);
   const createChat = useChatStore((s) => s.createChat);
 
@@ -289,6 +293,35 @@ export default function CharacterScreen() {
     }
   }, [character, navigate]);
 
+  const handleOpenSettings = useCallback(() => {
+    setMenuVisible(false);
+    setSettingsVisible(true);
+  }, []);
+
+  const handleToggleSetting = useCallback(
+    async (key: "showdefinition" | "allow_proxy" | "allow_published_chats") => {
+      if (!character) return;
+      const current = character[key];
+      const next = !current;
+
+      // Optimistic update
+      setCharacter({ ...character, [key]: next });
+      setSettingsSaving(key);
+      try {
+        const updated = await patchCharacterSettings(character.id, {
+          [key]: next,
+        });
+        setCharacter(updated);
+      } catch {
+        // Revert on failure
+        setCharacter({ ...character, [key]: current });
+      } finally {
+        setSettingsSaving(null);
+      }
+    },
+    [character],
+  );
+
   const handleCopyCharacter = useCallback(() => {
     setMenuVisible(false);
     if (!character) return;
@@ -390,6 +423,12 @@ export default function CharacterScreen() {
           </Pressable>
           {isOwner && (
             <>
+              <Pressable
+                onPress={handleOpenSettings}
+                style={styles.menuItem}
+              >
+                <Text style={styles.menuItemText}>Character Settings</Text>
+              </Pressable>
               <Pressable onPress={handleEditCharacter} style={styles.menuItem}>
                 <Text style={styles.menuItemText}>Edit Character</Text>
               </Pressable>
@@ -418,6 +457,62 @@ export default function CharacterScreen() {
         buttons={alertButtons}
         onDismiss={() => setAlertVisible(false)}
       />
+
+      <Modal
+        visible={settingsVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSettingsVisible(false)}
+      >
+        <View style={styles.settingsOverlay}>
+          <View style={styles.settingsModal}>
+            <View style={styles.settingsHeader}>
+              <Text style={styles.settingsTitle}>Character Settings</Text>
+              <Pressable onPress={() => setSettingsVisible(false)}>
+                <Text style={styles.settingsClose}>{"✕"}</Text>
+              </Pressable>
+            </View>
+
+            <View style={styles.settingsRow}>
+              <View style={styles.settingsInfo}>
+                <Text style={styles.settingsLabel}>Show Definition</Text>
+              </View>
+              <Switch
+                value={character?.showdefinition ?? false}
+                onValueChange={() => handleToggleSetting("showdefinition")}
+                trackColor={{ false: colors.border, true: colors.accent }}
+                disabled={settingsSaving !== null}
+              />
+            </View>
+
+            <View style={styles.settingsRow}>
+              <View style={styles.settingsInfo}>
+                <Text style={styles.settingsLabel}>Allow Proxies</Text>
+              </View>
+              <Switch
+                value={character?.allow_proxy ?? false}
+                onValueChange={() => handleToggleSetting("allow_proxy")}
+                trackColor={{ false: colors.border, true: colors.accent }}
+                disabled={settingsSaving !== null}
+              />
+            </View>
+
+            <View style={styles.settingsRow}>
+              <View style={styles.settingsInfo}>
+                <Text style={styles.settingsLabel}>Allow Published Chats</Text>
+              </View>
+              <Switch
+                value={character?.allow_published_chats ?? false}
+                onValueChange={() =>
+                  handleToggleSetting("allow_published_chats")
+                }
+                trackColor={{ false: colors.border, true: colors.accent }}
+                disabled={settingsSaving !== null}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {copyLoading && (
         <View style={styles.copyOverlay}>
@@ -516,6 +611,53 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   copyOverlayText: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  settingsOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.8)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  settingsModal: {
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    width: "85%",
+    padding: 20,
+  },
+  settingsHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  settingsTitle: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  settingsClose: {
+    color: colors.textFaint,
+    fontSize: 18,
+    padding: 4,
+  },
+  settingsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  settingsInfo: {
+    flex: 1,
+    marginRight: 16,
+  },
+  settingsLabel: {
     color: colors.text,
     fontSize: 16,
     fontWeight: "500",

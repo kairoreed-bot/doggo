@@ -84,6 +84,23 @@ export async function deleteCharacter(characterId: string): Promise<void> {
     await apiClient.delete(`/characters/${characterId}`);
 }
 
+export interface CharacterSettingsPatch {
+    showdefinition?: boolean;
+    allow_proxy?: boolean;
+    allow_published_chats?: boolean;
+}
+
+export async function patchCharacterSettings(
+    characterId: string,
+    data: CharacterSettingsPatch,
+): Promise<CharacterDetail> {
+    const response = await apiClient.patch<CharacterDetail>(
+        `/characters/${characterId}`,
+        data,
+    );
+    return response.data;
+}
+
 export interface MyCharactersParams {
     page?: number;
     is_public?: boolean;
