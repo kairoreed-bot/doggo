@@ -101,12 +101,12 @@ export default function CharacterHeader({
           {!character.is_public && <Badge label="Private" variant="private" />}
         </View>
 
-        {(character.tags.length > 0 || character.custom_tags.length > 0) && (
+        {(character.tags.length > 0 || character.custom_tags?.length > 0) && (
           <View style={styles.tagsRow}>
             {character.tags.map((tag) => (
               <Tag key={tag.id} label={tag.name} />
             ))}
-            {character.custom_tags.map((tag, _) => (
+            {character.custom_tags?.map((tag, _) => (
               <Tag key={`custom-${tag}`} label={tag} variant="custom" />
             ))}
           </View>
