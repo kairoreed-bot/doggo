@@ -92,14 +92,14 @@ export default function CreatorScreen() {
 
   const characterScreenName = useMemo(() => {
     try {
-      const routes = navigation.getParent()?.getState()?.routeNames ?? [];
-      return routes.includes("ChatCharacter")
-        ? "ChatCharacter"
-        : "CharacterScreen";
+      const routes = navigation.getState()?.routeNames ?? [];
+      if (routes.includes("ChatCharacter")) return "ChatCharacter";
+      if (routes.includes("ProfileCharacterScreen")) return "ProfileCharacterScreen";
+      return "CharacterScreen";
     } catch {
       return "CharacterScreen";
     }
-  }, [navigation.getParent]);
+  }, [navigation.getState]);
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);

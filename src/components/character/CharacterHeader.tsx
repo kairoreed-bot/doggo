@@ -33,7 +33,7 @@ export default function CharacterHeader({
   const [altIndex, setAltIndex] = useState(0);
   const nav = useNavigation<any>();
 
-  const altMessages = character.first_messages.slice(1);
+  const altMessages = character.first_messages?.slice(1);
 
   const descriptionMarkdown = useMemo(
     () => htmlToMarkdown(character.description || ""),
