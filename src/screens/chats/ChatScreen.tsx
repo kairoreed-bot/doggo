@@ -1,4 +1,4 @@
-import React, {
+import {
   useEffect,
   useCallback,
   useMemo,
@@ -53,8 +53,6 @@ import { useKeyboardHeight } from "../../hooks/useKeyboardHeight";
 import { useIsTablet } from "../../hooks/useIsTablet";
 import { colors } from "../../utils/colors";
 import { processSystemMessage, processText } from "../../utils/processText";
-import { EnrichedMarkdownText } from "react-native-enriched-markdown";
-import { markdownStyle } from "../../utils/markdownStyle";
 import TextInput from "../../components/common/TextInput";
 import CollapsibleSection from "../../components/common/CollapsibleSection";
 import { File as ExpoFile } from "expo-file-system";
@@ -67,13 +65,6 @@ import { cleanTags, generify } from "../../utils/markdown";
 
 type Route = RouteProp<ChatsStackParamList, "ChatScreen">;
 type Nav = NativeStackNavigationProp<ChatsStackParamList, "ChatScreen">;
-
-interface ExportMessage {
-  is_bot: boolean;
-  is_main: boolean;
-  message: string;
-  metadata: unknown;
-}
 
 function validateMessagesImport(
   raw: string,

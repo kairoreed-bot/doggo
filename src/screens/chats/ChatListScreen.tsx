@@ -273,25 +273,31 @@ export default function ChatListScreen() {
 
   if (isLoadingChats && chats.length === 0) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.accent} />
+      <View style={styles.container}>
+        <Text style={styles.title}>Chats</Text>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={colors.accent} />
+        </View>
       </View>
     );
   }
 
   if (error && chats.length === 0) {
     return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>{error}</Text>
-        <Pressable
-          onPress={() => loadChats(1)}
-          style={({ pressed }) => [
-            styles.retryBtn,
-            pressed && { opacity: 0.7 },
-          ]}
-        >
-          <Text style={styles.retryText}>Retry</Text>
-        </Pressable>
+      <View style={styles.container}>
+        <Text style={styles.title}>Chats</Text>
+        <View style={styles.centered}>
+          <Text style={styles.errorText}>{error}</Text>
+          <Pressable
+            onPress={() => loadChats(1)}
+            style={({ pressed }) => [
+              styles.retryBtn,
+              pressed && { opacity: 0.7 },
+            ]}
+          >
+            <Text style={styles.retryText}>Retry</Text>
+          </Pressable>
+        </View>
       </View>
     );
   }
