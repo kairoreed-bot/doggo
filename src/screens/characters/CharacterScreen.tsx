@@ -23,7 +23,11 @@ import CustomAlert, {
 import type { CharactersStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../stores/authStore";
 import { useChatStore } from "../../stores/chatStore";
-import { getCharacterDetail, deleteCharacter, patchCharacterSettings } from "../../api/characters";
+import {
+  getCharacterDetail,
+  deleteCharacter,
+  patchCharacterSettings,
+} from "../../api/characters";
 import {
   getCharacterChats,
   fetchSystemPrompt,
@@ -223,10 +227,7 @@ export default function CharacterScreen() {
             personaTag,
             abortController.signal,
           );
-          personality = generify(
-            cleanTags(raw, personaTag),
-            charName,
-          );
+          personality = generify(cleanTags(raw, personaTag), charName);
         } catch {
           personality = generify(character.personality ?? "", charName);
         }
@@ -407,6 +408,7 @@ export default function CharacterScreen() {
         onContinueChat={latestChat ? handleContinueChat : undefined}
         isLoading={loading}
         isTablet={isTablet}
+        isOwner={isOwner}
       />
 
       <PersonaPicker
@@ -426,10 +428,7 @@ export default function CharacterScreen() {
           </Pressable>
           {isOwner && (
             <>
-              <Pressable
-                onPress={handleOpenSettings}
-                style={styles.menuItem}
-              >
+              <Pressable onPress={handleOpenSettings} style={styles.menuItem}>
                 <Text style={styles.menuItemText}>Character Settings</Text>
               </Pressable>
               <Pressable onPress={handleEditCharacter} style={styles.menuItem}>

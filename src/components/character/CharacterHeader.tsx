@@ -8,6 +8,7 @@ import Button from "../common/Button";
 import Tag from "../common/Tag";
 import Badge from "../common/Badge";
 import CollapsibleSection from "../common/CollapsibleSection";
+import ReviewsSection from "../reviews/ReviewsSection";
 import type { CharacterDetail } from "../../types/api";
 import { htmlToMarkdown } from "../../utils/markdown";
 import { markdownStyle } from "../../utils/markdownStyle";
@@ -20,12 +21,14 @@ export default function CharacterHeader({
   onContinueChat,
   isLoading,
   isTablet = false,
+  isOwner = false,
 }: {
   character: CharacterDetail;
   onStartChat: () => void;
   onContinueChat?: () => void;
   isLoading: boolean;
   isTablet?: boolean;
+  isOwner?: boolean;
 }) {
   const [descExpanded, setDescExpanded] = useState(false);
   const [descTruncated, setDescTruncated] = useState(false);
@@ -247,8 +250,7 @@ export default function CharacterHeader({
             <Pressable
               style={[
                 styles.altNavBtn,
-                altIndex === altMessages.length - 1 &&
-                  styles.altNavBtnDisabled,
+                altIndex === altMessages.length - 1 && styles.altNavBtnDisabled,
               ]}
               onPress={() =>
                 setAltIndex((i) => Math.min(altMessages.length - 1, i + 1))
@@ -275,11 +277,20 @@ export default function CharacterHeader({
     <>
       {isTablet ? (
         <View style={[styles.container, styles.tabletRow]}>
-          <ScrollView style={styles.tabletLeft} contentContainerStyle={styles.tabletLeftInner} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={styles.tabletLeft}
+            contentContainerStyle={styles.tabletLeftInner}
+            showsVerticalScrollIndicator={false}
+          >
             {charInfo}
           </ScrollView>
-          <ScrollView style={styles.tabletRight} contentContainerStyle={styles.tabletRightInner} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={styles.tabletRight}
+            contentContainerStyle={styles.tabletRightInner}
+            showsVerticalScrollIndicator={false}
+          >
             {charDetails}
+            <ReviewsSection characterId={character.id} isOwner={isOwner} />
           </ScrollView>
         </View>
       ) : (
@@ -289,6 +300,7 @@ export default function CharacterHeader({
         >
           {charInfo}
           {charDetails}
+          <ReviewsSection characterId={character.id} isOwner={isOwner} />
         </ScrollView>
       )}
       <AvatarPreview

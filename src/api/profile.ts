@@ -6,6 +6,7 @@ import type {
     UploadFileResponse,
     CreatePersonaRequest,
     UpdatePersonaRequest,
+    BlockedContent,
 } from "../types/api";
 
 export async function getMyProfile(): Promise<UserProfile> {
@@ -134,6 +135,22 @@ export async function reorderPersonaGroups(
 ): Promise<boolean> {
     const response = await apiClient.patch<boolean>("/persona-groups/reorder", {
         groups,
+    });
+    return response.data;
+}
+
+export async function getBlockedContent(): Promise<BlockedContent> {
+    const response = await apiClient.get<BlockedContent>(
+        "/profiles/mine/blocked-content",
+    );
+    return response.data;
+}
+
+export async function updateBlockedContent(
+    blockList: BlockedContent,
+): Promise<boolean> {
+    const response = await apiClient.patch<boolean>("/profiles/mine", {
+        block_list: blockList,
     });
     return response.data;
 }

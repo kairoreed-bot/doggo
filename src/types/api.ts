@@ -1,3 +1,10 @@
+export interface BlockedContent {
+    bots: string[];
+    creators: string[];
+    keywords: string[];
+    tags: number[];
+}
+
 export interface LoginRequest {
     email: string;
     password: string;
@@ -66,7 +73,7 @@ export interface Pronouns {
 export interface Persona {
     appearance: string;
     avatar: string;
-    group_id: null | string;
+    groupId: null | string;
     id: string;
     is_default: boolean;
     name: string;
@@ -153,7 +160,7 @@ export interface CreateMessageRequest {
     };
     character_id: string;
     chat_id: number;
-    created_at?: string|Date;
+    created_at?: string | Date;
     rating?: null;
 }
 
@@ -323,12 +330,7 @@ export interface UserProfile {
         bio_preview_images: boolean;
     };
     profile: string;
-    block_list: {
-        bots: string[];
-        creators: unknown[];
-        tags: number[];
-        keywords: string[];
-    };
+    block_list: BlockedContent;
     style: {
         background_blur: number;
         background_color: string;
@@ -378,7 +380,7 @@ export interface UploadFileResponse {
 export interface CreatePersonaRequest {
     appearance: string;
     avatar: string;
-    group_id?: string | null;
+    groupId?: string | null;
     name: string;
     pronouns?: Pronouns | null;
 }
@@ -386,7 +388,7 @@ export interface CreatePersonaRequest {
 export interface UpdatePersonaRequest {
     appearance: string;
     avatar: string;
-    group_id?: string | null;
+    groupId?: string | null;
     id: string;
     name: string;
     pronouns?: Pronouns | null;
@@ -438,4 +440,94 @@ export interface CharacterResponse {
     tags: number[];
     stats: { chat: number; message: number };
     custom_tags: string[];
+}
+
+// Reviews
+
+export interface ReviewUserProfile {
+    avatar: string;
+    is_verified: boolean;
+    name: string;
+    plusbadge: boolean;
+    user_name: string;
+}
+
+export interface Review {
+    character_id: string;
+    comment_count: number;
+    content: string;
+    created_at: string;
+    dislike_count: number;
+    id: string;
+    is_like: boolean;
+    is_liked_by_user: boolean;
+    is_pinned: boolean;
+    like_count: number;
+    moderator: boolean;
+    pinned_at: string | null;
+    user_id: string;
+    user_profiles: ReviewUserProfile;
+}
+
+export interface ReviewComment {
+    content: string;
+    created_at: string;
+    dislike_count: number;
+    id: string;
+    is_liked_by_user: boolean;
+    like_count: number;
+    moderator: boolean;
+    review_id: string;
+    user_id: string;
+    user_profiles: ReviewUserProfile;
+}
+
+export interface ReviewCounts {
+    dislikes: number;
+    likes: number;
+    total: number;
+}
+
+export interface ReviewSettings {
+    character_id: string;
+    comment_mode: "open";
+}
+
+export interface CreateReviewRequest {
+    character_id: string;
+    content: string;
+    is_like: boolean;
+}
+
+export interface CreateReviewResponse {
+    user_id: string;
+    character_id: string;
+    created_at: string;
+    content: string;
+    is_like: boolean;
+    id: string;
+    deleted_at: string | null;
+    deleted_by: string | null;
+    like_count: number;
+    comment_count: number;
+    dislike_count: number;
+    is_pinned: boolean;
+    pinned_at: string | null;
+}
+
+export interface CreateCommentRequest {
+    content: string;
+    review_id: string;
+}
+
+export interface CreateCommentResponse {
+    id: string;
+    review_id: string;
+    user_id: string;
+    content: string;
+    created_at: string;
+    like_count: number;
+    dislike_count: number;
+    is_deleted: boolean;
+    is_liked_by_user: boolean;
 }

@@ -10,6 +10,10 @@ import {
   Switch,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { ProfileStackParamList } from "../../navigation/types";
+
+type Nav = NativeStackNavigationProp<ProfileStackParamList, "Settings">;
 import Button from "../../components/common/Button";
 import ScreenHeader from "../../components/common/ScreenHeader";
 import { useAuthStore } from "../../stores/authStore";
@@ -55,7 +59,7 @@ function wrapperLabel(key: string): string {
 }
 
 export default function SettingsScreen() {
-  const { goBack } = useNavigation();
+  const { goBack, navigate } = useNavigation<Nav>();
   const logout = useAuthStore((s) => s.logout);
   const chatLayout = useChatStore((s) => s.chatLayout);
   const setChatLayout = useChatStore((s) => s.setChatLayout);
@@ -164,6 +168,25 @@ export default function SettingsScreen() {
               </Text>
             </View>
             <Text style={styles.settingChevron}>▼</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Content</Text>
+          <Pressable
+            style={({ pressed }) => [
+              styles.settingRow,
+              pressed && { opacity: 0.7 },
+            ]}
+            onPress={() => navigate("BlockedContent")}
+          >
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>Blocked Content</Text>
+              <Text style={styles.settingValue}>
+                Manage blocked creators, characters, and tags
+              </Text>
+            </View>
+            <Text style={styles.settingChevron}>›</Text>
           </Pressable>
         </View>
 

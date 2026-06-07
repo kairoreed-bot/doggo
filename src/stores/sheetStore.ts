@@ -6,13 +6,14 @@ export interface SheetEntry {
   visible: boolean;
   onClose: () => void;
   children: React.ReactNode;
+  standalone?: boolean;
 }
 
 interface SheetState {
   entries: SheetEntry[];
   register: (entry: SheetEntry) => void;
   unregister: (key: number) => void;
-  update: (key: number, updates: Partial<Pick<SheetEntry, "visible" | "children" | "onClose">>) => void;
+  update: (key: number, updates: Partial<Pick<SheetEntry, "visible" | "children" | "onClose" | "standalone">>) => void;
 }
 
 export const useSheetStore = create<SheetState>((set) => ({
@@ -38,10 +39,11 @@ export function registerSheet(
   visible: boolean,
   onClose: () => void,
   children: React.ReactNode,
+  standalone = false,
 ): number {
   const key = nextKey++;
   activeKeys.add(key);
-  useSheetStore.getState().register({ key, visible, onClose, children });
+  useSheetStore.getState().register({ key, visible, onClose, children, standalone });
   return key;
 }
 
@@ -50,8 +52,9 @@ export function updateSheet(
   visible: boolean,
   onClose: () => void,
   children: React.ReactNode,
+  standalone = false,
 ) {
-  useSheetStore.getState().update(key, { visible, onClose, children });
+  useSheetStore.getState().update(key, { visible, onClose, children, standalone });
 }
 
 export function unregisterSheet(key: number) {

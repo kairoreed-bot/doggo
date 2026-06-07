@@ -106,6 +106,20 @@ export interface MyCharactersParams {
     is_public?: boolean;
 }
 
+export interface TagSuggestionsResponse {
+    suggestions: string[];
+}
+
+export async function getTagSuggestions(
+    prefix: string,
+): Promise<TagSuggestionsResponse> {
+    const response = await apiClient.get<TagSuggestionsResponse>(
+        "/characters/tags/suggest",
+        { params: { prefix } },
+    );
+    return response.data;
+}
+
 export async function getMyCharacters(
     params: MyCharactersParams = {},
 ): Promise<TrendingResponse> {

@@ -22,6 +22,7 @@ import {
   type RouteProp,
 } from "@react-navigation/native";
 import Avatar from "../../components/common/Avatar";
+import AvatarPreview from "../../components/common/AvatarPreview";
 import CharacterCard from "../../components/character/CharacterCard";
 import { getProfile } from "../../api/profile";
 import { getCharacters } from "../../api/characters";
@@ -97,7 +98,8 @@ export default function CreatorScreen() {
     try {
       const routes = navigation.getState()?.routeNames ?? [];
       if (routes.includes("ChatCharacter")) return "ChatCharacter";
-      if (routes.includes("ProfileCharacterScreen")) return "ProfileCharacterScreen";
+      if (routes.includes("ProfileCharacterScreen"))
+        return "ProfileCharacterScreen";
       return "CharacterScreen";
     } catch {
       return "CharacterScreen";
@@ -108,6 +110,9 @@ export default function CreatorScreen() {
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [aboutExpanded, setAboutExpanded] = useState(false);
+  const [preview, setPreview] = useState<{ uri: string; name: string } | null>(
+    null,
+  );
 
   const [list, dispatch] = useReducer(listReducer, {
     characters: [],
@@ -209,11 +214,20 @@ export default function CreatorScreen() {
 
   const profileSection = (
     <View style={[styles.profileSection, isTablet && { paddingTop: 0 }]}>
-      <Avatar
-        uri={profile.avatar ? avatarUrl(profile.avatar) : undefined}
-        name={profile.name}
-        size={80}
-      />
+      <Pressable
+        onPress={() =>
+          setPreview({
+            uri: avatarUrl(profile.avatar),
+            name: profile.name,
+          })
+        }
+      >
+        <Avatar
+          uri={profile.avatar ? avatarUrl(profile.avatar) : undefined}
+          name={profile.name}
+          size={80}
+        />
+      </Pressable>
       <Text style={styles.profileName}>{profile.name}</Text>
       {profile.user_name ? (
         <Text style={styles.profileUsername}>@{profile.user_name}</Text>
@@ -300,16 +314,23 @@ export default function CreatorScreen() {
       </Pressable>
       {isTablet ? (
         <View style={styles.tabletRow}>
-          <ScrollView style={styles.tabletLeft} contentContainerStyle={styles.tabletLeftInner} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={styles.tabletLeft}
+            contentContainerStyle={styles.tabletLeftInner}
+            showsVerticalScrollIndicator={false}
+          >
             {profileSection}
           </ScrollView>
-          <View style={styles.tabletRight}>
-            {characterList}
-          </View>
+          <View style={styles.tabletRight}>{characterList}</View>
         </View>
       ) : (
         characterList
       )}
+      <AvatarPreview
+        visible={preview !== null}
+        uri={preview?.uri ?? ""}
+        onClose={() => setPreview(null)}
+      />
     </View>
   );
 }
@@ -318,7 +339,11 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   tabletRow: { flex: 1, flexDirection: "row", gap: 20, paddingHorizontal: 20 },
   tabletLeft: { flex: 1 },
-  tabletLeftInner: { flexGrow: 1, justifyContent: "center", paddingVertical: 20 },
+  tabletLeftInner: {
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingVertical: 20,
+  },
   tabletRight: { flex: 1 },
   backBtn: { paddingTop: 50, paddingHorizontal: 20, paddingBottom: 8 },
   backText: { color: colors.accent, fontSize: 16, fontWeight: "600" },

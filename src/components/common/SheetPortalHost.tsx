@@ -7,15 +7,21 @@ export default function SheetPortalHost() {
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-      {entries.map((entry) => (
-        <SheetRenderer
-          key={entry.key}
-          visible={entry.visible}
-          onClose={entry.onClose}
-        >
-          {entry.children}
-        </SheetRenderer>
-      ))}
+      {entries.map((entry) =>
+        entry.standalone ? (
+          <View key={entry.key} style={StyleSheet.absoluteFill} pointerEvents="box-none">
+            {entry.children}
+          </View>
+        ) : (
+          <SheetRenderer
+            key={entry.key}
+            visible={entry.visible}
+            onClose={entry.onClose}
+          >
+            {entry.children}
+          </SheetRenderer>
+        ),
+      )}
     </View>
   );
 }
