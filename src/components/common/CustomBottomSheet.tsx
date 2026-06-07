@@ -54,7 +54,10 @@ function SheetRenderer({
   onClose: () => void;
   children: React.ReactNode;
 }) {
-  const { height: windowHeight } = useWindowDimensions();
+  const { height: windowHeight, width: windowWidth } = useWindowDimensions();
+  const isTablet = Math.min(windowWidth, windowHeight) >= 600;
+  const sheetMaxWidth = 500;
+  const sheetInset = Math.max(0, (windowWidth - sheetMaxWidth) / 2);
   const translateY = useSharedValue(windowHeight);
   const backdropOpacity = useSharedValue(0);
   const dragOffset = useSharedValue(0);
@@ -146,7 +149,18 @@ function SheetRenderer({
       </Pressable>
 
       <GestureDetector gesture={panGesture}>
-        <Animated.View style={[styles.sheet, rSheetStyle]}>
+        <Animated.View
+          style={[
+            styles.sheet,
+            rSheetStyle,
+            isTablet && {
+              left: sheetInset,
+              right: sheetInset,
+              borderRadius: 20,
+              borderBottomWidth: 1,
+            },
+          ]}
+        >
           <View style={styles.handle}>
             <View style={styles.handleBar} />
           </View>

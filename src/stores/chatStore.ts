@@ -35,6 +35,7 @@ interface ChatState {
     chosenVariantIds: Set<number>;
     autoFormatEnabled: boolean;
     narrationWrapper: string;
+    chatCentered: boolean;
 
     loadChats: (page?: number) => Promise<void>;
     loadChatMessages: (chatId: number) => Promise<void>;
@@ -62,6 +63,8 @@ interface ChatState {
     setAutoFormatEnabled: (enabled: boolean) => void;
     setNarrationWrapper: (wrapper: string) => void;
     loadAutoFormatSettings: () => Promise<void>;
+    setChatCentered: (centered: boolean) => void;
+    loadChatCentered: () => Promise<void>;
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -84,6 +87,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     chosenVariantIds: new Set<number>(),
     autoFormatEnabled: false,
     narrationWrapper: "*",
+    chatCentered: false,
 
     loadChats: async (page = 1) => {
         const state = get();
@@ -284,5 +288,15 @@ export const useChatStore = create<ChatState>((set, get) => ({
             storage.getNarrationWrapper(),
         ]);
         set({ autoFormatEnabled: enabled, narrationWrapper: wrapper });
+    },
+
+    setChatCentered: (centered) => {
+        storage.setChatCentered(centered);
+        set({ chatCentered: centered });
+    },
+
+    loadChatCentered: async () => {
+        const centered = await storage.getChatCentered();
+        set({ chatCentered: centered });
     },
 }));

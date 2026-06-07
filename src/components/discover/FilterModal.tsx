@@ -244,6 +244,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: 20,
     width: "85%",
+    maxWidth: 480,
   },
   filterContent: {
     maxHeight: "85%",

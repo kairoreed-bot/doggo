@@ -14,6 +14,7 @@ import { useAuthStore } from "../../stores/authStore";
 import { getMyProfile } from "../../api/profile";
 import type { UserProfile } from "../../types/api";
 import type { ProfileStackParamList } from "../../navigation/types";
+import { useIsTablet } from "../../hooks/useIsTablet";
 import { colors } from "../../utils/colors";
 import { assetUrl, avatarUrl } from "../../utils/assets";
 
@@ -89,6 +90,7 @@ function MenuItem({
 export default function ProfileScreen() {
   const { user } = useAuthStore();
   const { navigate } = useNavigation<Nav>();
+  const isTablet = useIsTablet();
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
   useFocusEffect(
@@ -113,14 +115,9 @@ export default function ProfileScreen() {
   const username = profile?.user_name || "";
   const avatar = profile?.avatar ? avatarUrl(profile.avatar) : "";
 
-  return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* \u2500\u2500 Header \u2500\u2500 */}
-
+  const leftColumn = (
+    <View style={isTablet ? styles.column : undefined}>
+      {/* Header */}
       {isLoading ? (
         <View style={styles.headerSkeleton}>
           <SkeletonBlock width={80} height={80} borderRadius={40} />
@@ -140,8 +137,7 @@ export default function ProfileScreen() {
         </View>
       )}
 
-      {/* \u2500\u2500 Badges \u2500\u2500 */}
-
+      {/* Badges */}
       {isLoading ? (
         <View style={styles.section}>
           <SkeletonBlock width={60} height={12} borderRadius={4} />
@@ -164,8 +160,7 @@ export default function ProfileScreen() {
         </View>
       ) : null}
 
-      {/* \u2500\u2500 Account Info \u2500\u2500 */}
-
+      {/* Account Info */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account</Text>
         {isLoading ? (
@@ -197,9 +192,12 @@ export default function ProfileScreen() {
           </>
         )}
       </View>
+    </View>
+  );
 
-      {/* \u2500\u2500 Navigation Menu \u2500\u2500 */}
-
+  const rightColumn = (
+    <View style={isTablet ? styles.column : undefined}>
+      {/* Navigation Menu */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Navigate</Text>
         <MenuItem
@@ -234,6 +232,30 @@ export default function ProfileScreen() {
           onPress={() => navigate("Settings")}
         />
       </View>
+    </View>
+  );
+
+  return (
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={[
+        styles.content,
+        isTablet && styles.contentTablet,
+        isTablet && { flexGrow: 1, justifyContent: "center" },
+      ]}
+      showsVerticalScrollIndicator={false}
+    >
+      {isTablet ? (
+        <View style={styles.tabletRow}>
+          {leftColumn}
+          {rightColumn}
+        </View>
+      ) : (
+        <>
+          {leftColumn}
+          {rightColumn}
+        </>
+      )}
     </ScrollView>
   );
 }
@@ -247,6 +269,17 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 60,
     paddingBottom: 40,
+  },
+  contentTablet: {
+    paddingTop: 40,
+    paddingHorizontal: 24,
+  },
+  tabletRow: {
+    flexDirection: "row",
+    gap: 24,
+  },
+  column: {
+    flex: 1,
   },
 
   /* Header */

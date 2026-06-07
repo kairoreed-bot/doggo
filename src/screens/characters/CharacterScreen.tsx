@@ -40,6 +40,7 @@ import type {
 import { processSystemMessage } from "../../utils/processText";
 import { storage } from "../../utils/storage";
 import { colors } from "../../utils/colors";
+import { useIsTablet } from "../../hooks/useIsTablet";
 import { cleanTags, generify } from "../../utils/markdown";
 
 type Route = RouteProp<CharactersStackParamList, "CharacterScreen">;
@@ -64,6 +65,7 @@ export default function CharacterScreen() {
   const user = useAuthStore((s) => s.user);
   const createChat = useChatStore((s) => s.createChat);
 
+  const isTablet = useIsTablet();
   const isOwner = character?.creator_id === user?.id;
 
   useEffect(() => {
@@ -404,6 +406,7 @@ export default function CharacterScreen() {
         onStartChat={handleStartChat}
         onContinueChat={latestChat ? handleContinueChat : undefined}
         isLoading={loading}
+        isTablet={isTablet}
       />
 
       <PersonaPicker

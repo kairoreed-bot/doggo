@@ -15,6 +15,7 @@ export const STORAGE_KEYS = {
     SHOW_TIMESTAMPS: "show_timestamps",
     AUTO_FORMAT_ENABLED: "auto_format_enabled",
     NARRATION_WRAPPER: "narration_wrapper",
+  CHAT_CENTERED: "chat_centered",
     CREATE_BOT_STATE: "create_bot_state",
     EDIT_BOT_STATE: "edit_bot_state",
 } as const;

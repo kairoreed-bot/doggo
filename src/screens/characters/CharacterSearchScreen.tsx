@@ -38,6 +38,7 @@ import FilterModal, {
   INITIAL_FILTERS,
 } from "../../components/discover/FilterModal";
 import { colors } from "../../utils/colors";
+import { useIsTablet } from "../../hooks/useIsTablet";
 
 type Nav = NativeStackNavigationProp<
   CharactersStackParamList,
@@ -149,6 +150,7 @@ export function buildParams(
 
 export default function CharacterSearchScreen() {
   const { navigate } = useNavigation<Nav>();
+  const isTablet = useIsTablet();
   const [state, dispatch] = useReducer(listReducer, {
     characters: [],
     page: 1,
@@ -355,9 +357,10 @@ export default function CharacterSearchScreen() {
             characterName: item.name,
           })
         }
+        style={isTablet ? styles.cardTablet : undefined}
       />
     ),
-    [navigate],
+    [navigate, isTablet],
   );
 
   const sortLabel =
@@ -422,6 +425,9 @@ export default function CharacterSearchScreen() {
           data={state.characters}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
+          numColumns={isTablet ? 2 : 1}
+          key={isTablet ? "tablet-2col" : "phone-1col"}
+          columnWrapperStyle={isTablet ? styles.columnWrapper : undefined}
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.5}
           drawDistance={2000}
@@ -554,5 +560,13 @@ const styles = StyleSheet.create({
   emptyText: {
     color: colors.textDim,
     fontSize: 14,
+  },
+  cardTablet: {
+    flex: 1,
+    marginHorizontal: 8,
+  },
+  columnWrapper: {
+    gap: 12,
+    paddingHorizontal: 20,
   },
 });

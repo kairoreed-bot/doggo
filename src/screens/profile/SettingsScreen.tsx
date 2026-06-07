@@ -14,6 +14,7 @@ import Button from "../../components/common/Button";
 import ScreenHeader from "../../components/common/ScreenHeader";
 import { useAuthStore } from "../../stores/authStore";
 import { useChatStore } from "../../stores/chatStore";
+import { useIsTablet } from "../../hooks/useIsTablet";
 import { colors } from "../../utils/colors";
 
 type LayoutOption = "messaging" | "janitor" | "edgeToEdge";
@@ -64,6 +65,9 @@ export default function SettingsScreen() {
   const setAutoFormatEnabled = useChatStore((s) => s.setAutoFormatEnabled);
   const narrationWrapper = useChatStore((s) => s.narrationWrapper);
   const setNarrationWrapper = useChatStore((s) => s.setNarrationWrapper);
+  const chatCentered = useChatStore((s) => s.chatCentered);
+  const setChatCentered = useChatStore((s) => s.setChatCentered);
+  const isTablet = useIsTablet();
   const [layoutPickerVisible, setLayoutPickerVisible] = useState(false);
   const [wrapperPickerVisible, setWrapperPickerVisible] = useState(false);
 
@@ -109,6 +113,23 @@ export default function SettingsScreen() {
               thumbColor={colors.text}
             />
           </View>
+
+          {isTablet && (
+            <View style={styles.toggleRow}>
+              <View style={styles.settingInfo}>
+                <Text style={styles.settingLabel}>Center chat</Text>
+                <Text style={styles.settingValue}>
+                  Constrain chat width instead of edge-to-edge
+                </Text>
+              </View>
+              <Switch
+                value={chatCentered}
+                onValueChange={setChatCentered}
+                trackColor={{ false: colors.border, true: colors.accent }}
+                thumbColor={colors.text}
+              />
+            </View>
+          )}
         </View>
 
         <View style={styles.section}>

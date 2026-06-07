@@ -169,6 +169,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: 20,
     width: "85%",
+    maxWidth: 500,
   },
   tagsContent: {
     maxHeight: "70%",

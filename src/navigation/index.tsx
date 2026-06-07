@@ -17,12 +17,14 @@ export default function AppNavigator() {
   const { isAuthenticated, isLoading, initialize } = useAuthStore();
   const loadChatLayout = useChatStore((s) => s.loadChatLayout);
   const loadAutoFormatSettings = useChatStore((s) => s.loadAutoFormatSettings);
+  const loadChatCentered = useChatStore((s) => s.loadChatCentered);
 
   useEffect(() => {
     initialize();
     loadChatLayout();
     loadAutoFormatSettings();
-  }, [initialize, loadChatLayout, loadAutoFormatSettings]);
+    loadChatCentered();
+  }, [initialize, loadChatLayout, loadAutoFormatSettings, loadChatCentered]);
 
   if (isLoading) {
     return (

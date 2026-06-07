@@ -50,6 +50,7 @@ import {
 } from "../../api/chats";
 import ScreenHeader from "../../components/common/ScreenHeader";
 import { useKeyboardHeight } from "../../hooks/useKeyboardHeight";
+import { useIsTablet } from "../../hooks/useIsTablet";
 import { colors } from "../../utils/colors";
 import { processSystemMessage, processText } from "../../utils/processText";
 import { EnrichedMarkdownText } from "react-native-enriched-markdown";
@@ -179,6 +180,8 @@ export default function ChatScreen() {
   const user = useAuthStore((s) => s.user);
   const storeRemoveMessages = useChatStore((s) => s.removeMessages);
   const storeReplaceMessages = useChatStore((s) => s.replaceMessages);
+  const isTablet = useIsTablet();
+  const chatCentered = useChatStore((s) => s.chatCentered);
 
   const persona = useMemo(() => {
     const detail = activeChatDetail;
@@ -888,11 +891,15 @@ export default function ChatScreen() {
           behavior="padding"
           keyboardVerticalOffset={0}
         >
-          {chatContent}
+          <View style={isTablet && chatCentered ? styles.chatCentered : { flex: 1 }}>
+            {chatContent}
+          </View>
         </KeyboardAvoidingView>
       ) : (
         <View style={{ flex: 1, paddingBottom: keyboardHeight }}>
-          {chatContent}
+          <View style={isTablet && chatCentered ? styles.chatCentered : { flex: 1 }}>
+            {chatContent}
+          </View>
         </View>
       )}
 
@@ -1130,6 +1137,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  chatCentered: {
+    flex: 1,
+    width: "100%",
+    maxWidth: 700,
+    alignSelf: "center",
   },
   header: {
     flexDirection: "row",

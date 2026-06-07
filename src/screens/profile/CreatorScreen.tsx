@@ -13,6 +13,7 @@ import {
   StyleSheet,
   Pressable,
   RefreshControl,
+  ScrollView,
 } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import {
@@ -27,6 +28,7 @@ import { getCharacters } from "../../api/characters";
 import { stripHtml } from "../../utils/markdown";
 import { assetUrl, avatarUrl } from "../../utils/assets";
 import { colors } from "../../utils/colors";
+import { useIsTablet } from "../../hooks/useIsTablet";
 import type {
   UserProfile,
   TrendingCharacter,
@@ -89,6 +91,7 @@ export default function CreatorScreen() {
   const navigation = useNavigation<any>();
   const { navigate, goBack } = navigation;
   const { userId } = route.params;
+  const isTablet = useIsTablet();
 
   const characterScreenName = useMemo(() => {
     try {
@@ -204,98 +207,119 @@ export default function CreatorScreen() {
     );
   }
 
+  const profileSection = (
+    <View style={[styles.profileSection, isTablet && { paddingTop: 0 }]}>
+      <Avatar
+        uri={profile.avatar ? avatarUrl(profile.avatar) : undefined}
+        name={profile.name}
+        size={80}
+      />
+      <Text style={styles.profileName}>{profile.name}</Text>
+      {profile.user_name ? (
+        <Text style={styles.profileUsername}>@{profile.user_name}</Text>
+      ) : null}
+      {profile.is_verified && (
+        <Text style={styles.profileVerified}>{"\u2713"} Verified</Text>
+      )}
+      {profile.subscriber_badge && (
+        <View style={styles.subBadge}>
+          <Text style={styles.subBadgeText}>Subscriber</Text>
+        </View>
+      )}
+      {profile.about_me ? (
+        <View style={styles.aboutSection}>
+          <View style={!aboutExpanded && styles.aboutCollapsed}>
+            <Text style={styles.profileAbout}>
+              {stripHtml(profile.about_me)}
+            </Text>
+          </View>
+          <Pressable
+            style={styles.showMoreBtn}
+            onPress={() => setAboutExpanded((e) => !e)}
+          >
+            <Text style={styles.showMoreText}>
+              {aboutExpanded ? "Show less" : "Show more"}
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
+
+      {profile.badges && profile.badges.length > 0 && (
+        <View style={styles.badgesRow}>
+          {profile.badges.map((b) => (
+            <View key={b.id} style={styles.badge}>
+              <Avatar uri={assetUrl(b.img)} size={24} />
+              <Text style={styles.badgeTitle}>{b.title}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      <View style={styles.statsRow}>
+        <View style={styles.statItem}>
+          <Text style={styles.statValue}>{list.total}</Text>
+          <Text style={styles.statLabel}>Characters</Text>
+        </View>
+      </View>
+    </View>
+  );
+
+  const characterList = (
+    <FlashList
+      data={list.characters}
+      renderItem={renderItem}
+      keyExtractor={(item) => item.id}
+      onEndReached={handleLoadMore}
+      onEndReachedThreshold={0.5}
+      style={styles.flashlist}
+      refreshControl={
+        <RefreshControl
+          refreshing={list.refreshing}
+          onRefresh={handleRefresh}
+          tintColor={colors.accent}
+        />
+      }
+      contentContainerStyle={styles.listContent}
+      showsVerticalScrollIndicator={false}
+      ListHeaderComponent={isTablet ? null : profileSection}
+      ListFooterComponent={
+        list.loading && list.characters.length > 0 ? (
+          <ActivityIndicator
+            style={styles.footerLoader}
+            color={colors.accent}
+          />
+        ) : null
+      }
+    />
+  );
+
   return (
     <View style={styles.container}>
       <Pressable style={styles.backBtn} onPress={goBack}>
         <Text style={styles.backText}>{"\u2190"} Back</Text>
       </Pressable>
-      <FlashList
-        data={list.characters}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        onEndReached={handleLoadMore}
-        onEndReachedThreshold={0.5}
-        style={styles.flashlist}
-        refreshControl={
-          <RefreshControl
-            refreshing={list.refreshing}
-            onRefresh={handleRefresh}
-            tintColor={colors.accent}
-          />
-        }
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        ListHeaderComponent={
-          <View style={styles.profileSection}>
-            <Avatar
-              uri={profile.avatar ? avatarUrl(profile.avatar) : undefined}
-              name={profile.name}
-              size={80}
-            />
-            <Text style={styles.profileName}>{profile.name}</Text>
-            {profile.user_name ? (
-              <Text style={styles.profileUsername}>@{profile.user_name}</Text>
-            ) : null}
-            {profile.is_verified && (
-              <Text style={styles.profileVerified}>{"\u2713"} Verified</Text>
-            )}
-            {profile.subscriber_badge && (
-              <View style={styles.subBadge}>
-                <Text style={styles.subBadgeText}>Subscriber</Text>
-              </View>
-            )}
-            {profile.about_me ? (
-              <View style={styles.aboutSection}>
-                <View style={!aboutExpanded && styles.aboutCollapsed}>
-                  <Text style={styles.profileAbout}>
-                    {stripHtml(profile.about_me)}
-                  </Text>
-                </View>
-                <Pressable
-                  style={styles.showMoreBtn}
-                  onPress={() => setAboutExpanded((e) => !e)}
-                >
-                  <Text style={styles.showMoreText}>
-                    {aboutExpanded ? "Show less" : "Show more"}
-                  </Text>
-                </Pressable>
-              </View>
-            ) : null}
-
-            {profile.badges && profile.badges.length > 0 && (
-              <View style={styles.badgesRow}>
-                {profile.badges.map((b) => (
-                  <View key={b.id} style={styles.badge}>
-                    <Avatar uri={assetUrl(b.img)} size={24} />
-                    <Text style={styles.badgeTitle}>{b.title}</Text>
-                  </View>
-                ))}
-              </View>
-            )}
-
-            <View style={styles.statsRow}>
-              <View style={styles.statItem}>
-                <Text style={styles.statValue}>{list.total}</Text>
-                <Text style={styles.statLabel}>Characters</Text>
-              </View>
-            </View>
+      {isTablet ? (
+        <View style={styles.tabletRow}>
+          <ScrollView style={styles.tabletLeft} contentContainerStyle={styles.tabletLeftInner} showsVerticalScrollIndicator={false}>
+            {profileSection}
+          </ScrollView>
+          <View style={styles.tabletRight}>
+            {characterList}
           </View>
-        }
-        ListFooterComponent={
-          list.loading && list.characters.length > 0 ? (
-            <ActivityIndicator
-              style={styles.footerLoader}
-              color={colors.accent}
-            />
-          ) : null
-        }
-      />
+        </View>
+      ) : (
+        characterList
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  tabletRow: { flex: 1, flexDirection: "row", gap: 20, paddingHorizontal: 20 },
+  tabletLeft: { flex: 1 },
+  tabletLeftInner: { flexGrow: 1, justifyContent: "center", paddingVertical: 20 },
+  tabletRight: { flex: 1 },
   backBtn: { paddingTop: 50, paddingHorizontal: 20, paddingBottom: 8 },
   backText: { color: colors.accent, fontSize: 16, fontWeight: "600" },
   centered: {

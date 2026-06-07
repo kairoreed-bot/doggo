@@ -127,7 +127,16 @@ export const storage = {
         await AsyncStorage.removeItem(STORAGE_KEYS.CREATE_BOT_STATE);
     },
 
-    async setEditBotState(state: object): Promise<void> {
+    async setChatCentered(centered: boolean): Promise<void> {
+    await AsyncStorage.setItem(STORAGE_KEYS.CHAT_CENTERED, String(centered));
+  },
+
+  async getChatCentered(): Promise<boolean> {
+    const v = await AsyncStorage.getItem(STORAGE_KEYS.CHAT_CENTERED);
+    return v === "true";
+  },
+
+  async setEditBotState(state: object): Promise<void> {
         await AsyncStorage.setItem(
             STORAGE_KEYS.EDIT_BOT_STATE,
             JSON.stringify(state),

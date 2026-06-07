@@ -1,5 +1,6 @@
-import { View, Text, Pressable, Modal, StyleSheet } from "react-native";
+import { View, Text, Pressable, Modal, StyleSheet, useWindowDimensions } from "react-native";
 import { colors } from "../../utils/colors";
+import { useIsTablet } from "../../hooks/useIsTablet";
 
 export interface AlertButton {
   text: string;
@@ -20,6 +21,8 @@ export default function CustomAlert({
   buttons: AlertButton[];
   onDismiss?: () => void;
 }) {
+  const isTablet = useIsTablet();
+
   return (
     <Modal
       visible={visible}
@@ -28,7 +31,7 @@ export default function CustomAlert({
       onRequestClose={onDismiss}
     >
       <Pressable style={styles.overlay} onPress={onDismiss}>
-        <Pressable style={styles.card} onPress={() => {}}>
+        <Pressable style={[styles.card, isTablet && styles.cardTablet]} onPress={() => {}}>
           <Text style={styles.title}>{title}</Text>
           {message ? <Text style={styles.message}>{message}</Text> : null}
 
@@ -83,6 +86,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     overflow: "hidden",
+  },
+  cardTablet: {
+    maxWidth: 420,
   },
   title: {
     color: colors.text,

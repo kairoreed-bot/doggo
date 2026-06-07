@@ -19,11 +19,13 @@ export default function CharacterHeader({
   onStartChat,
   onContinueChat,
   isLoading,
+  isTablet = false,
 }: {
   character: CharacterDetail;
   onStartChat: () => void;
   onContinueChat?: () => void;
   isLoading: boolean;
+  isTablet?: boolean;
 }) {
   const [descExpanded, setDescExpanded] = useState(false);
   const [descTruncated, setDescTruncated] = useState(false);
@@ -52,221 +54,243 @@ export default function CharacterHeader({
     [descExpanded, descTruncated],
   );
 
-  return (
+  const charInfo = (
     <>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.content}
+      <Avatar
+        uri={character.avatar ? botAvatarUrl(character.avatar) : ""}
+        onPress={() =>
+          setPreview({
+            uri: botAvatarUrl(character.avatar),
+            name: character.name,
+          })
+        }
+        name={character.name}
+        size={96}
+      />
+      <Text style={styles.name}>{character.name}</Text>
+
+      {character.chat_name && character.chat_name !== character.name ? (
+        <Text style={styles.chatName}>{character.chat_name}</Text>
+      ) : null}
+
+      <Pressable
+        onPress={() =>
+          nav.navigate("CreatorScreen", {
+            userId: character.creator_id,
+            userName: character.creator_name,
+          })
+        }
+        hitSlop={8}
       >
-        <Avatar
-          uri={character.avatar ? botAvatarUrl(character.avatar) : ""}
-          onPress={() =>
-            setPreview({
-              uri: botAvatarUrl(character.avatar),
-              name: character.name,
-            })
-          }
-          name={character.name}
-          size={96}
+        <Text style={styles.creator}>
+          by {character.creator_name}
+          {character.creator_verified && (
+            <Text style={styles.verified}> ✓</Text>
+          )}
+        </Text>
+      </Pressable>
+
+      <View style={styles.badges}>
+        <Badge
+          label={character.is_nsfw ? "NSFW" : "Safe"}
+          variant={character.is_nsfw ? "nsfw" : "safe"}
         />
-        <Text style={styles.name}>{character.name}</Text>
+        {character.allow_proxy && <Badge label="Proxy" />}
+        {!character.is_public && <Badge label="Private" variant="private" />}
+      </View>
 
-        {character.chat_name && character.chat_name !== character.name ? (
-          <Text style={styles.chatName}>{character.chat_name}</Text>
-        ) : null}
+      {(character.tags.length > 0 || character.custom_tags?.length > 0) && (
+        <View style={styles.tagsRow}>
+          {character.tags.map((tag) => (
+            <Tag key={tag.id} label={tag.name} />
+          ))}
+          {character.custom_tags?.map((tag, _) => (
+            <Tag key={`custom-${tag}`} label={tag} variant="custom" />
+          ))}
+        </View>
+      )}
 
-        <Pressable
-          onPress={() =>
-            nav.navigate("CreatorScreen", {
-              userId: character.creator_id,
-              userName: character.creator_name,
-            })
-          }
-          hitSlop={8}
-        >
-          <Text style={styles.creator}>
-            by {character.creator_name}
-            {character.creator_verified && (
-              <Text style={styles.verified}> ✓</Text>
-            )}
+      <View style={styles.stats}>
+        <View style={styles.statItem}>
+          <Text style={styles.statValue}>
+            {character.stats.chat.toLocaleString()}
           </Text>
-        </Pressable>
-
-        <View style={styles.badges}>
-          <Badge
-            label={character.is_nsfw ? "NSFW" : "Safe"}
-            variant={character.is_nsfw ? "nsfw" : "safe"}
-          />
-          {character.allow_proxy && <Badge label="Proxy" />}
-          {!character.is_public && <Badge label="Private" variant="private" />}
+          <Text style={styles.statLabel}>Chats</Text>
         </View>
-
-        {(character.tags.length > 0 || character.custom_tags?.length > 0) && (
-          <View style={styles.tagsRow}>
-            {character.tags.map((tag) => (
-              <Tag key={tag.id} label={tag.name} />
-            ))}
-            {character.custom_tags?.map((tag, _) => (
-              <Tag key={`custom-${tag}`} label={tag} variant="custom" />
-            ))}
-          </View>
-        )}
-
-        <View style={styles.stats}>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>
-              {character.stats.chat.toLocaleString()}
-            </Text>
-            <Text style={styles.statLabel}>Chats</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>
-              {character.stats.message.toLocaleString()}
-            </Text>
-            <Text style={styles.statLabel}>Messages</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>
-              {character.token_counts.total_tokens.toLocaleString()}
-            </Text>
-            <Text style={styles.statLabel}>Tokens</Text>
-          </View>
+        <View style={styles.statItem}>
+          <Text style={styles.statValue}>
+            {character.stats.message.toLocaleString()}
+          </Text>
+          <Text style={styles.statLabel}>Messages</Text>
         </View>
+        <View style={styles.statItem}>
+          <Text style={styles.statValue}>
+            {character.token_counts.total_tokens.toLocaleString()}
+          </Text>
+          <Text style={styles.statLabel}>Tokens</Text>
+        </View>
+      </View>
 
-        {character.description ? (
-          <View style={styles.descSection}>
-            <View
-              style={!descExpanded && styles.descCollapsed}
-              onLayout={handleDescLayout}
-            >
-              <EnrichedMarkdownText
-                markdown={descriptionMarkdown}
-                markdownStyle={markdownStyle}
-                selectable={false}
-              />
-            </View>
-            {descTruncated && (
-              <Pressable
-                style={styles.showMoreBtn}
-                onPress={() => setDescExpanded((e) => !e)}
-              >
-                <Text style={styles.showMoreText}>
-                  {descExpanded ? "Show less" : "Show more"}
-                </Text>
-              </Pressable>
-            )}
-          </View>
-        ) : null}
-
-        {character.personality ? (
-          <CollapsibleSection title="Personality">
-            <EnrichedMarkdownText
-              markdown={htmlToMarkdown(character.personality)}
-              markdownStyle={markdownStyle}
-              selectable={false}
-            />
-          </CollapsibleSection>
-        ) : null}
-        {character.scenario ? (
-          <CollapsibleSection title="Scenario">
-            <EnrichedMarkdownText
-              markdown={htmlToMarkdown(character.scenario)}
-              markdownStyle={markdownStyle}
-              selectable={false}
-            />
-          </CollapsibleSection>
-        ) : null}
-        {character.example_dialogs ? (
-          <CollapsibleSection title="Example Dialogue">
-            <EnrichedMarkdownText
-              markdown={htmlToMarkdown(character.example_dialogs)}
-              markdownStyle={markdownStyle}
-              selectable={false}
-            />
-          </CollapsibleSection>
-        ) : null}
-
-        {character.first_message ? (
-          <CollapsibleSection title="First Message">
-            <EnrichedMarkdownText
-              markdown={htmlToMarkdown(character.first_message)}
-              markdownStyle={markdownStyle}
-              selectable={false}
-            />
-          </CollapsibleSection>
-        ) : null}
-
-        {altMessages.length > 0 && (
-          <CollapsibleSection
-            title={`Alternate Messages (${altMessages.length})`}
+      {character.description ? (
+        <View style={styles.descSection}>
+          <View
+            style={!descExpanded && styles.descCollapsed}
+            onLayout={handleDescLayout}
           >
             <EnrichedMarkdownText
-              markdown={htmlToMarkdown(altMessages[altIndex])}
+              markdown={descriptionMarkdown}
               markdownStyle={markdownStyle}
               selectable={false}
             />
-            <View style={styles.altNav}>
-              <Pressable
-                style={[
-                  styles.altNavBtn,
-                  altIndex === 0 && styles.altNavBtnDisabled,
-                ]}
-                onPress={() => setAltIndex((i) => Math.max(0, i - 1))}
-                disabled={altIndex === 0}
-              >
-                <Text
-                  style={[
-                    styles.altNavText,
-                    altIndex === 0 && styles.altNavTextDisabled,
-                  ]}
-                >
-                  ← Prev
-                </Text>
-              </Pressable>
-              <Text style={styles.altNavCount}>
-                {altIndex + 1} / {altMessages.length}
+          </View>
+          {descTruncated && (
+            <Pressable
+              style={styles.showMoreBtn}
+              onPress={() => setDescExpanded((e) => !e)}
+            >
+              <Text style={styles.showMoreText}>
+                {descExpanded ? "Show less" : "Show more"}
               </Text>
-              <Pressable
-                style={[
-                  styles.altNavBtn,
-                  altIndex === altMessages.length - 1 &&
-                    styles.altNavBtnDisabled,
-                ]}
-                onPress={() =>
-                  setAltIndex((i) => Math.min(altMessages.length - 1, i + 1))
-                }
-                disabled={altIndex === altMessages.length - 1}
-              >
-                <Text
-                  style={[
-                    styles.altNavText,
-                    altIndex === altMessages.length - 1 &&
-                      styles.altNavTextDisabled,
-                  ]}
-                >
-                  Next →
-                </Text>
-              </Pressable>
-            </View>
-          </CollapsibleSection>
-        )}
+            </Pressable>
+          )}
+        </View>
+      ) : null}
 
-        {onContinueChat && (
-          <Button
-            title="Continue latest chat"
-            onPress={onContinueChat}
-            variant="outline"
-            style={styles.continueBtn}
-          />
-        )}
-
+      {onContinueChat && (
         <Button
-          title={`Start chatting with ${character.chat_name ?? character.name}`}
-          onPress={onStartChat}
-          loading={isLoading}
-          style={styles.startBtn}
+          title="Continue latest chat"
+          onPress={onContinueChat}
+          variant="outline"
+          style={styles.continueBtn}
         />
-      </ScrollView>
+      )}
+
+      <Button
+        title={`Start chatting with ${character.chat_name ?? character.name}`}
+        onPress={onStartChat}
+        loading={isLoading}
+        style={styles.startBtn}
+      />
+    </>
+  );
+
+  const charDetails = (
+    <>
+      {character.personality ? (
+        <CollapsibleSection title="Personality">
+          <EnrichedMarkdownText
+            markdown={htmlToMarkdown(character.personality)}
+            markdownStyle={markdownStyle}
+            selectable={false}
+          />
+        </CollapsibleSection>
+      ) : null}
+      {character.scenario ? (
+        <CollapsibleSection title="Scenario">
+          <EnrichedMarkdownText
+            markdown={htmlToMarkdown(character.scenario)}
+            markdownStyle={markdownStyle}
+            selectable={false}
+          />
+        </CollapsibleSection>
+      ) : null}
+      {character.example_dialogs ? (
+        <CollapsibleSection title="Example Dialogue">
+          <EnrichedMarkdownText
+            markdown={htmlToMarkdown(character.example_dialogs)}
+            markdownStyle={markdownStyle}
+            selectable={false}
+          />
+        </CollapsibleSection>
+      ) : null}
+
+      {character.first_message ? (
+        <CollapsibleSection title="First Message">
+          <EnrichedMarkdownText
+            markdown={htmlToMarkdown(character.first_message)}
+            markdownStyle={markdownStyle}
+            selectable={false}
+          />
+        </CollapsibleSection>
+      ) : null}
+
+      {altMessages.length > 0 && (
+        <CollapsibleSection
+          title={`Alternate Messages (${altMessages.length})`}
+        >
+          <EnrichedMarkdownText
+            markdown={htmlToMarkdown(altMessages[altIndex])}
+            markdownStyle={markdownStyle}
+            selectable={false}
+          />
+          <View style={styles.altNav}>
+            <Pressable
+              style={[
+                styles.altNavBtn,
+                altIndex === 0 && styles.altNavBtnDisabled,
+              ]}
+              onPress={() => setAltIndex((i) => Math.max(0, i - 1))}
+              disabled={altIndex === 0}
+            >
+              <Text
+                style={[
+                  styles.altNavText,
+                  altIndex === 0 && styles.altNavTextDisabled,
+                ]}
+              >
+                ← Prev
+              </Text>
+            </Pressable>
+            <Text style={styles.altNavCount}>
+              {altIndex + 1} / {altMessages.length}
+            </Text>
+            <Pressable
+              style={[
+                styles.altNavBtn,
+                altIndex === altMessages.length - 1 &&
+                  styles.altNavBtnDisabled,
+              ]}
+              onPress={() =>
+                setAltIndex((i) => Math.min(altMessages.length - 1, i + 1))
+              }
+              disabled={altIndex === altMessages.length - 1}
+            >
+              <Text
+                style={[
+                  styles.altNavText,
+                  altIndex === altMessages.length - 1 &&
+                    styles.altNavTextDisabled,
+                ]}
+              >
+                Next →
+              </Text>
+            </Pressable>
+          </View>
+        </CollapsibleSection>
+      )}
+    </>
+  );
+
+  return (
+    <>
+      {isTablet ? (
+        <View style={[styles.container, styles.tabletRow]}>
+          <ScrollView style={styles.tabletLeft} contentContainerStyle={styles.tabletLeftInner} showsVerticalScrollIndicator={false}>
+            {charInfo}
+          </ScrollView>
+          <ScrollView style={styles.tabletRight} contentContainerStyle={styles.tabletRightInner} showsVerticalScrollIndicator={false}>
+            {charDetails}
+          </ScrollView>
+        </View>
+      ) : (
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.content}
+        >
+          {charInfo}
+          {charDetails}
+        </ScrollView>
+      )}
       <AvatarPreview
         visible={preview !== null}
         uri={preview?.uri ?? ""}
@@ -284,6 +308,27 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 20,
     paddingBottom: 60,
+  },
+  tabletRow: {
+    flex: 1,
+    flexDirection: "row",
+    gap: 24,
+    padding: 20,
+  },
+  tabletLeft: {
+    flex: 1,
+  },
+  tabletLeftInner: {
+    alignItems: "center",
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingVertical: 20,
+  },
+  tabletRight: {
+    flex: 1,
+  },
+  tabletRightInner: {
+    paddingVertical: 20,
   },
   name: {
     color: colors.text,

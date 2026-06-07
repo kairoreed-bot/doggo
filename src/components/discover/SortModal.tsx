@@ -88,6 +88,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: 20,
     width: "85%",
+    maxWidth: 400,
   },
   title: {
     color: colors.text,

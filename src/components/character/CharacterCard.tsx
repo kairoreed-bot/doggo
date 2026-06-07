@@ -12,9 +12,11 @@ import type { TrendingCharacter } from "../../types/api";
 export default function CharacterCard({
   character,
   onPress,
+  style,
 }: {
   character: TrendingCharacter;
   onPress: () => void;
+  style?: object;
 }) {
   const [preview, setPreview] = useState<{ uri: string; name: string } | null>(
     null,
@@ -22,7 +24,7 @@ export default function CharacterCard({
   return (
     <>
       <Pressable
-        style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+        style={({ pressed }) => [styles.card, style, pressed && styles.pressed]}
         onPress={onPress}
       >
         <View style={styles.info}>
