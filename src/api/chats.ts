@@ -34,6 +34,17 @@ export async function createMessage(
     return response.data;
 }
 
+export async function setMessageMain(
+    chatId: number,
+    messageId: number,
+): Promise<SuccessResponse> {
+    const response = await apiClient.patch<SuccessResponse>(
+        `/chats/${chatId}/messages/${messageId}`,
+        { is_main: true },
+    );
+    return response.data;
+}
+
 export async function editMessage(
     chatId: number,
     messageId: number,
@@ -144,6 +155,8 @@ export async function generateAlpha(
     if (cfBm) cookies.push(`__cf_bm=${cfBm}`);
     const ua = getUserAgent();
 
+    // console.log(JSON.stringify(body))
+
     let response: Response;
     try {
         response = await fetch("https://janitorai.com/generateAlpha", {
@@ -162,7 +175,6 @@ export async function generateAlpha(
         callbacks.onError(err);
         return;
     }
-    console.log(body)
 
     const contentType = response.headers.get("content-type") || "";
 

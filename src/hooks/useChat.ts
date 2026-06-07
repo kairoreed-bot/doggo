@@ -138,7 +138,7 @@ export function useChat() {
         ) => {
             const request: CreateMessageRequest = {
                 is_bot: isBot,
-                is_main: isMain,
+                is_main: isMain && !isBot,
                 message: content,
                 metadata: {
                     persona_id: personaId,
@@ -239,6 +239,25 @@ export function useChat() {
             const detail = useChatStore.getState().activeChatDetail;
             if (!detail) return;
 
+            // Mark last bot message(s) as main before generating
+            const allMsgs = useChatStore.getState().messages;
+            const grouped = groupMessages(allMsgs);
+            for (let i = grouped.length - 1; i >= 0; i--) {
+                if (grouped[i].isBot) {
+                    const botMsgs = grouped[i].messages.filter((m) => m.id > 0);
+                    if (botMsgs.length === 1) {
+                        chatsApi.setMessageMain(chatId, botMsgs[0].id).catch(() => {});
+                    } else if (botMsgs.length > 1) {
+                        const chosenIds = useChatStore.getState().chosenVariantIds;
+                        const chosen = botMsgs.find((m) => chosenIds.has(m.id));
+                        if (chosen) {
+                            chatsApi.setMessageMain(chatId, chosen.id).catch(() => {});
+                        }
+                    }
+                    break;
+                }
+            }
+
             storeSetGenerating(true);
             storeSetActiveThinking("");
 
@@ -295,6 +314,14 @@ export function useChat() {
                 const userConfig = {
                     ...profile.config,
                     reverseProxyKey: selectedProxy?.apiKey ?? "",
+                    openAiModel:
+                        selectedProxy?.model ??
+                        profile.config.openAiModel ??
+                        "",
+                    open_ai_jailbreak_prompt:
+                        selectedProxy?.jailbreakPrompt ??
+                        profile.config.open_ai_jailbreak_prompt ??
+                        "",
                 };
 
                 if (privacyMode) {
@@ -336,8 +363,17 @@ export function useChat() {
                         summary: detail.chat.summary,
                         user_id: detail.chat.user_id,
                     },
-                    chatMessages,
-                    clientPlatform: "android",
+                    chatMessages: chatMessages.map(m => ({
+                        chat_id: m.chat_id,
+                        created_at: m.created_at,
+                        id: m.id,
+                        is_bot: m.is_bot,
+                        is_main: m.is_main,
+                        message: m.message,
+                        character_id: m.is_bot ? detail.chat.character_id : undefined,
+                        persona_id: m.is_bot ? undefined : detail.chat.persona_id || personaId
+                    })),
+                    clientPlatform: "web",
                     forcedPromptGenerationCacheRefetch: {
                         character: false,
                         chat: false,
@@ -358,7 +394,14 @@ export function useChat() {
                         name: p.name,
                         type: "persona",
                     })),
-                    userConfig,
+                    userConfig: {
+                        ...userConfig,
+                        proxyConfigurations: undefined,
+                        openAIKey: null,
+                        selectedProxyConfigId: undefined,
+                        bio_preview_images: undefined,
+                        claudeApiKey: null
+                    },
                 };
 
                 const msgBuffer = createTokenBuffer((accumulated) => {
@@ -407,13 +450,10 @@ export function useChat() {
                                                 is_bot: true,
                                                 is_main: false,
                                                 message,
-                                                metadata: {
-                                                    persona_id: personaId,
-                                                    persona_name: "",
-                                                    persona_avatar: "",
-                                                },
                                                 character_id: characterId,
                                                 chat_id: chatId,
+                                                created_at: new Date(),
+                                                rating: null
                                             }),
                                         showChallenge,
                                         showTurnstile,

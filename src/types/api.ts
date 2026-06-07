@@ -146,13 +146,15 @@ export interface CreateMessageRequest {
     is_bot: boolean;
     is_main: boolean;
     message: string;
-    metadata: {
+    metadata?: {
         persona_id: string | null;
         persona_name?: string;
         persona_avatar?: string;
     };
     character_id: string;
     chat_id: number;
+    created_at?: string|Date;
+    rating?: null;
 }
 
 export interface CreateMessageResponse extends ChatMessage {

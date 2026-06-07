@@ -87,12 +87,16 @@ const MessageGroupRenderer = React.memo(
     enableThinking?: boolean;
     onReroll?: () => void;
   }) {
-    const [activeIdx, setActiveIdx] = useState(() => group.messages.length - 1);
+    const [activeIdx, setActiveIdx] = useState(() => {
+      const mainIdx = group.messages.findIndex((m) => m.is_main);
+      return mainIdx >= 0 ? mainIdx : group.messages.length - 1;
+    });
     const variantCount = group.messages.length;
 
     useEffect(() => {
-      setActiveIdx(variantCount - 1);
-    }, [variantCount]);
+      const mainIdx = group.messages.findIndex((m) => m.is_main);
+      setActiveIdx(mainIdx >= 0 ? mainIdx : variantCount - 1);
+    }, [variantCount, group.messages]);
 
     const safeIdx = Math.max(0, Math.min(variantCount - 1, activeIdx));
     const activeMessage =
@@ -170,7 +174,10 @@ const MessageGroupRenderer = React.memo(
             </GestureDetector>
           ) : (
             <ChatBubble
-              message={group.messages[group.messages.length - 1]}
+              message={
+                group.messages.find((m) => m.is_main) ??
+                group.messages[group.messages.length - 1]
+              }
               isUser={false}
               onEdit={onEdit}
               onDelete={onDelete}
