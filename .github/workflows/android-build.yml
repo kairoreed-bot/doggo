@@ -13,6 +13,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      CI: true
+      NODE_OPTIONS: --max-old-space-size=4096
 
     steps:
       - name: Checkout
@@ -40,6 +43,18 @@ jobs:
       - name: Prebuild Android
         run: npx expo prebuild --platform android --clean
 
+      - name: Test Metro bundle
+        run: |
+          npx react-native bundle \
+            --platform android \
+            --dev false \
+            --entry-file index.ts \
+            --bundle-output /tmp/test-bundle.js \
+            --assets-dest /tmp/test-assets \
+            2>&1 || true
+          echo "Bundle test done (errors may be non-fatal for gradle)"
+          ls -lh /tmp/test-bundle.js 2>/dev/null || echo "No bundle output (may be ok with gradle)"
+
       - name: Generate CI keystore
         run: |
           keytool -genkeypair -v \
@@ -56,7 +71,6 @@ jobs:
           const path = 'android/app/build.gradle';
           let gradle = fs.readFileSync(path, 'utf8');
 
-          // Add signingConfigs block after 'android {' (first occurrence)
           const signingBlock = \`
               signingConfigs {
                   release {
@@ -72,7 +86,6 @@ jobs:
             '\$1' + signingBlock
           );
 
-          // Add signingConfig line to the release build type
           gradle = gradle.replace(
             /(buildTypes\s*\{[\s\S]*?release\s*\{)/m,
             '\$1\n            signingConfig signingConfigs.release'
@@ -84,7 +97,7 @@ jobs:
 
       - name: Build release APK
         working-directory: android
-        run: ./gradlew assembleRelease
+        run: ./gradlew assembleRelease --stacktrace
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
