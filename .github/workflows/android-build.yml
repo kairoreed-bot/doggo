@@ -40,6 +40,11 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Fix worklets resolver
+        run: |
+          mkdir -p node_modules/react-native-worklets/.worklets
+          sed -i "s/path.join(workletsPackageDir, moduleName)/path.join(workletsPackageDir, moduleName.replace('react-native-worklets\\/', ''))/" metro.config.js
+
       - name: Prebuild Android
         run: npx expo prebuild --platform android --clean
 
