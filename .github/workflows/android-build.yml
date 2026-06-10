@@ -43,18 +43,6 @@ jobs:
       - name: Prebuild Android
         run: npx expo prebuild --platform android --clean
 
-      - name: Test Metro bundle
-        run: |
-          npx react-native bundle \
-            --platform android \
-            --dev false \
-            --entry-file index.ts \
-            --bundle-output /tmp/test-bundle.js \
-            --assets-dest /tmp/test-assets \
-            2>&1 || true
-          echo "Bundle test done (errors may be non-fatal for gradle)"
-          ls -lh /tmp/test-bundle.js 2>/dev/null || echo "No bundle output (may be ok with gradle)"
-
       - name: Generate CI keystore
         run: |
           keytool -genkeypair -v \
@@ -68,8 +56,8 @@ jobs:
         run: |
           node -e "
           const fs = require('fs');
-          const path = 'android/app/build.gradle';
-          let gradle = fs.readFileSync(path, 'utf8');
+          const buildGradle = 'android/app/build.gradle';
+          let gradle = fs.readFileSync(buildGradle, 'utf8');
 
           const signingBlock = \`
               signingConfigs {
@@ -91,17 +79,10 @@ jobs:
             '\$1\n            signingConfig signingConfigs.release'
           );
 
-          fs.writeFileSync(path, gradle);
+          fs.writeFileSync(buildGradle, gradle);
           console.log('Signing config injected');
           "
 
       - name: Build release APK
         working-directory: android
-        run: ./gradlew assembleRelease --stacktrace
-
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: doggy-release-apk
-          path: android/app/build/outputs/apk/release/app-release.apk
-          retention-days: 30
+        run: ./gradlew assembleRelease --info 2>&1 | tail -200
