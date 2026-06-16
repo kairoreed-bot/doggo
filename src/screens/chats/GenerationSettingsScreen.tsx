@@ -49,6 +49,8 @@ export function buildDefaultConfig(): Config {
       top_k: 0,
       top_p: 1.0,
       enable_thinking: false,
+      enable_reasoning: true,
+      enable_reasoning_chat: false,
       privacy_mode: false,
     },
     bad_words: [],
@@ -444,6 +446,24 @@ export default function GenerationSettingsScreen() {
         <Switch
           value={gs.enable_thinking}
           onValueChange={(v) => updateGen({ enable_thinking: v })}
+          trackColor={{ false: colors.border, true: colors.accent }}
+          thumbColor={colors.text}
+        />
+      </View>
+      <View style={styles.toggleRow}>
+        <Text style={styles.toggleLabel}>Enable Reasoning</Text>
+        <Switch
+          value={gs.enable_reasoning}
+          onValueChange={(v) => updateGen({ enable_reasoning: v })}
+          trackColor={{ false: colors.border, true: colors.accent }}
+          thumbColor={colors.text}
+        />
+      </View>
+      <View style={styles.toggleRow}>
+        <Text style={styles.toggleLabel}>Show Reasoning</Text>
+        <Switch
+          value={gs.enable_reasoning_chat}
+          onValueChange={(v) => updateGen({ enable_reasoning_chat: v })}
           trackColor={{ false: colors.border, true: colors.accent }}
           thumbColor={colors.text}
         />

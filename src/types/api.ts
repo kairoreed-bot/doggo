@@ -304,6 +304,8 @@ export interface GenerationSettings {
     top_k: number;
     top_p: number;
     enable_thinking: boolean;
+    enable_reasoning: boolean;
+    enable_reasoning_chat: boolean;
     privacy_mode: boolean;
 }
 
