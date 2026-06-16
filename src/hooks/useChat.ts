@@ -138,7 +138,7 @@ export function useChat() {
         ) => {
             const request: CreateMessageRequest = {
                 is_bot: isBot,
-                is_main: isMain && !isBot,
+                is_main: isMain,
                 message: content,
                 metadata: {
                     persona_id: personaId,
@@ -260,7 +260,7 @@ export function useChat() {
                     if (chosenId !== undefined) {
                         useChatStore.setState((s) => ({
                             messages: s.messages.map((m) =>
-                                m.id === chosenId ? { ...m, is_main: true } : { ...m, is_main: m.is_bot ? false : m.is_main },
+                                m.id === chosenId ? { ...m, is_main: true } : m,
                             ),
                         }));
                     }
