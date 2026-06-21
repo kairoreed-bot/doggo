@@ -12,7 +12,7 @@ import Avatar from "../common/Avatar";
 import AvatarPreview from "../common/AvatarPreview";
 import type { ChatMessage } from "../../types/api";
 import { replaceTags } from "../../utils/markdown";
-import { markdownStyle } from "../../utils/markdownStyle";
+import { markdownStyle, userMarkdownStyle } from "../../utils/markdownStyle";
 import { useChatStore } from "../../stores/chatStore";
 import { colors } from "../../utils/colors";
 
@@ -171,7 +171,7 @@ export default React.memo(function ChatBubble({
         <View>
           <StreamdownText
             markdown={displayContent}
-            markdownStyle={markdownStyle}
+            markdownStyle={isUser && chatLayout === "messaging" ? userMarkdownStyle : markdownStyle}
             selectable={false}
           />
           {showTimestamps ? (
