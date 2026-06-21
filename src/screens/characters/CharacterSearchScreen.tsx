@@ -163,6 +163,7 @@ export default function CharacterSearchScreen() {
   });
   const pageRef = useRef(1);
   const initialLoadRef = useRef(false);
+  const loadingMoreRef = useRef(false);
 
   const [allTags, setAllTags] = useState<TagEntry[]>([]);
   const [topCustomTags, setTopCustomTags] = useState<TagEntry[]>([]);
@@ -253,7 +254,10 @@ export default function CharacterSearchScreen() {
         }));
         setTopCustomTags(custom);
       }
+
+      loadingMoreRef.current = false;
     } catch (err: any) {
+      loadingMoreRef.current = false;
       dispatch({ type: "ERROR", payload: err.message });
     }
   }, []);
@@ -293,7 +297,9 @@ export default function CharacterSearchScreen() {
   );
 
   const handleLoadMore = useCallback(() => {
+    if (loadingMoreRef.current) return;
     if (!state.loading && state.characters.length < state.total) {
+      loadingMoreRef.current = true;
       const nextPage = pageRef.current + 1;
       doFetch(nextPage);
     }
