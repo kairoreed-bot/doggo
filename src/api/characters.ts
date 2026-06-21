@@ -141,6 +141,16 @@ export async function unfavoriteCharacter(
     await apiClient.post("/favorites/unfavorite", { characterId });
 }
 
+export async function getFavoriteCount(
+    characterId: string,
+): Promise<{ characterId: string; favoritesCount: number }> {
+    const response = await apiClient.get<{
+        characterId: string;
+        favoritesCount: number;
+    }>(`/favorites/character/${characterId}/count`);
+    return response.data;
+}
+
 export async function getMyCharacters(
     params: MyCharactersParams = {},
 ): Promise<TrendingResponse> {

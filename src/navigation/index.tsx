@@ -14,7 +14,9 @@ import MainTabs from "./MainTabs";
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
-  const { isAuthenticated, isLoading, initialize } = useAuthStore();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isLoading = useAuthStore((s) => s.isLoading);
+  const initialize = useAuthStore((s) => s.initialize);
   const loadChatLayout = useChatStore((s) => s.loadChatLayout);
   const loadAutoFormatSettings = useChatStore((s) => s.loadAutoFormatSettings);
   const loadChatCentered = useChatStore((s) => s.loadChatCentered);

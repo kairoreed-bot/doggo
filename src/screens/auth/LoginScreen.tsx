@@ -27,7 +27,7 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const { login } = useAuthStore();
+  const login = useAuthStore((s) => s.login);
   const { showTurnstile } = useTurnstile();
 
   const handleLogin = useCallback(async () => {

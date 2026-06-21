@@ -49,7 +49,8 @@ export default function TurnstileProvider({
   const pendingSiteKeyRef = useRef<string | null>(null);
   const challengeStartedRef = useRef(false);
 
-  const { setCfClearance, setCfBm } = useAuthStore();
+  const setCfClearance = useAuthStore((s) => s.setCfClearance);
+  const setCfBm = useAuthStore((s) => s.setCfBm);
 
   const injectRender = useCallback((siteKey: string) => {
     webViewRef.current?.injectJavaScript(

@@ -2,13 +2,9 @@ import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
-  TextInput,
   ActivityIndicator,
   StyleSheet,
   Pressable,
-  ScrollView,
-  Modal,
-  Switch,
 } from "react-native";
 import {
   type RouteProp,
@@ -16,8 +12,10 @@ import {
   useNavigation,
 } from "@react-navigation/native";
 import CharacterHeader from "../../components/character/CharacterHeader";
+import CharacterMenuSheet from "../../components/character/CharacterMenuSheet";
+import CharacterSettingsModal from "../../components/character/CharacterSettingsModal";
+import CharacterReportModal from "../../components/character/CharacterReportModal";
 import PersonaPicker from "../../components/chat/PersonaPicker";
-import CustomBottomSheet from "../../components/common/CustomBottomSheet";
 import CustomAlert, {
   type AlertButton,
 } from "../../components/common/CustomAlert";
@@ -32,6 +30,7 @@ import {
   checkFavorite,
   favoriteCharacter,
   unfavoriteCharacter,
+  getFavoriteCount,
 } from "../../api/characters";
 import {
   getCharacterChats,
@@ -41,17 +40,13 @@ import {
   getChatDetail,
   deleteChat,
 } from "../../api/chats";
-import type {
-  CharacterDetail,
-  ChatListItem,
-  ChatDetail,
-} from "../../types/api";
-import { apiClient } from "../../api/client";
+import type { CharacterDetail, ChatListItem, ChatDetail } from "../../types/api";
 import { processSystemMessage } from "../../utils/processText";
 import { storage } from "../../utils/storage";
 import { colors } from "../../utils/colors";
 import { useIsTablet } from "../../hooks/useIsTablet";
 import { cleanTags, generify } from "../../utils/markdown";
+import { formatCount } from "../../utils/format";
 
 type Route = RouteProp<CharactersStackParamList, "CharacterScreen">;
 
@@ -74,13 +69,8 @@ export default function CharacterScreen() {
   const [settingsSaving, setSettingsSaving] = useState<string | null>(null);
   const [isFavorited, setIsFavorited] = useState(false);
   const [favLoading, setFavLoading] = useState(false);
+  const [favoriteCount, setFavoriteCount] = useState(0);
   const [reportVisible, setReportVisible] = useState(false);
-  const [reportPhase, setReportPhase] = useState<1 | 2>(1);
-  const [reportReason, setReportReason] = useState("");
-  const [reportType, setReportType] = useState("");
-  const [reportLink, setReportLink] = useState("");
-  const [reportDetails, setReportDetails] = useState("");
-  const [reportSubmitting, setReportSubmitting] = useState(false);
   const user = useAuthStore((s) => s.user);
   const createChat = useChatStore((s) => s.createChat);
 
@@ -98,8 +88,10 @@ export default function CharacterScreen() {
         } catch {}
         const data = await getCharacterDetail(route.params.characterId);
         const favStatus = await checkFavorite(route.params.characterId);
+        const favCountRes = await getFavoriteCount(route.params.characterId);
         if (!cancelled) {
           setIsFavorited(favStatus);
+          setFavoriteCount(favCountRes.favoritesCount);
           setCharacter(data);
           const sorted = chats.sort(
             (a, b) =>
@@ -391,6 +383,7 @@ export default function CharacterScreen() {
     if (!character || favLoading) return;
     const wasFavorited = isFavorited;
     setIsFavorited(!wasFavorited);
+    setFavoriteCount((c) => c + (wasFavorited ? -1 : 1));
     setFavLoading(true);
     try {
       if (wasFavorited) {
@@ -400,65 +393,16 @@ export default function CharacterScreen() {
       }
     } catch {
       setIsFavorited(wasFavorited);
+      setFavoriteCount((c) => c + (wasFavorited ? 1 : -1));
     } finally {
       setFavLoading(false);
     }
   }, [character, isFavorited, favLoading]);
 
-  const reportReasons = [
-    { label: "Mine, posted without my permission", type: "stolen" },
-    { label: "Spam or low quality", type: "spam" },
-    { label: "Illegal or harmful content", type: "illegal" },
-    { label: "Other", type: "other" },
-  ];
-
   const handleReportCharacter = useCallback(() => {
     setMenuVisible(false);
-    setReportReason("");
-    setReportType("");
-    setReportLink("");
-    setReportDetails("");
-    setReportPhase(1);
     setReportVisible(true);
   }, []);
-
-  const handleSelectReportReason = useCallback(
-    (label: string, type: string) => {
-      setReportReason(label);
-      setReportType(type);
-    },
-    [],
-  );
-
-  const handleContinueReport = useCallback(() => {
-    if (!reportType) return;
-    setReportPhase(2);
-  }, [reportType]);
-
-  const handleSubmitReport = useCallback(async () => {
-    if (!character) return;
-    if (reportType === "stolen" && !reportLink.trim()) return;
-    if (reportType !== "stolen" && reportDetails.trim().length <= 5) return;
-
-    setReportSubmitting(true);
-    try {
-      const body: Record<string, string> = {
-        character_id: character.id,
-        reason: reportType,
-        other: reportDetails.trim(),
-        url: `https://janitorai.com/characters/${character.id}`,
-      };
-      if (reportType === "stolen") {
-        body.originalBotLink = reportLink.trim();
-      }
-      await apiClient.post("/moderation/report", body);
-      setReportVisible(false);
-    } catch {
-      // Submission failed silently
-    } finally {
-      setReportSubmitting(false);
-    }
-  }, [character, reportType, reportLink, reportDetails]);
 
   const handleCloseReport = useCallback(() => {
     setReportVisible(false);
@@ -492,7 +436,15 @@ export default function CharacterScreen() {
           <Text style={styles.arrow}>{"\u2190"} Back</Text>
         </Pressable>
         <View style={styles.headerActions}>
-          <Pressable onPress={handleToggleFavorite} style={styles.menuBtn}>
+          <Pressable onPress={handleToggleFavorite} style={styles.favBtn}>
+            <Text
+              style={[
+                styles.favCount,
+                { color: isFavorited ? colors.danger : colors.textSecondary },
+              ]}
+            >
+              {formatCount(favoriteCount)}
+            </Text>
             <Heart
               size={22}
               color={isFavorited ? colors.danger : colors.textSecondary}
@@ -504,6 +456,7 @@ export default function CharacterScreen() {
           </Pressable>
         </View>
       </View>
+
       <CharacterHeader
         character={character}
         onStartChat={handleStartChat}
@@ -520,49 +473,17 @@ export default function CharacterScreen() {
         characterName={character.name}
       />
 
-      <CustomBottomSheet
+      <CharacterMenuSheet
         visible={menuVisible}
+        isOwner={isOwner}
         onClose={() => setMenuVisible(false)}
-      >
-        <ScrollView>
-          <Pressable onPress={handleViewCreator} style={styles.menuItem}>
-            <Text style={styles.menuItemText}>View Creator</Text>
-          </Pressable>
-          {isOwner && (
-            <>
-              <Pressable onPress={handleOpenSettings} style={styles.menuItem}>
-                <Text style={styles.menuItemText}>Character Settings</Text>
-              </Pressable>
-              <Pressable onPress={handleEditCharacter} style={styles.menuItem}>
-                <Text style={styles.menuItemText}>Edit Character</Text>
-              </Pressable>
-              <Pressable
-                onPress={handleDeleteCharacter}
-                style={styles.menuItem}
-              >
-                <Text style={[styles.menuItemText, styles.menuItemDanger]}>
-                  Delete Character
-                </Text>
-              </Pressable>
-            </>
-          )}
-          {!isOwner && (
-            <>
-              <Pressable onPress={handleCopyCharacter} style={styles.menuItem}>
-                <Text style={styles.menuItemText}>Copy Character</Text>
-              </Pressable>
-              <Pressable
-                onPress={handleReportCharacter}
-                style={styles.menuItem}
-              >
-                <Text style={[styles.menuItemText, styles.menuItemDanger]}>
-                  Report Character
-                </Text>
-              </Pressable>
-            </>
-          )}
-        </ScrollView>
-      </CustomBottomSheet>
+        onViewCreator={handleViewCreator}
+        onOpenSettings={handleOpenSettings}
+        onEditCharacter={handleEditCharacter}
+        onDeleteCharacter={handleDeleteCharacter}
+        onCopyCharacter={handleCopyCharacter}
+        onReportCharacter={handleReportCharacter}
+      />
 
       <CustomAlert
         visible={alertVisible}
@@ -572,195 +493,23 @@ export default function CharacterScreen() {
         onDismiss={() => setAlertVisible(false)}
       />
 
-      <Modal
-        visible={settingsVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setSettingsVisible(false)}
-      >
-        <Pressable
-          style={styles.settingsOverlay}
-          onPress={() => setSettingsVisible(false)}
-        >
-          <Pressable style={styles.settingsModal} onPress={() => {}}>
-            <View style={styles.settingsHeader}>
-              <Text style={styles.settingsTitle}>Character Settings</Text>
-              <Pressable onPress={() => setSettingsVisible(false)}>
-                <Text style={styles.settingsClose}>{"✕"}</Text>
-              </Pressable>
-            </View>
+      {character && (
+        <CharacterSettingsModal
+          visible={settingsVisible}
+          character={character}
+          savingKey={settingsSaving}
+          onToggle={handleToggleSetting}
+          onClose={() => setSettingsVisible(false)}
+        />
+      )}
 
-            <View style={styles.settingsRow}>
-              <View style={styles.settingsInfo}>
-                <Text style={styles.settingsLabel}>Show Definition</Text>
-              </View>
-              <Switch
-                value={character?.showdefinition ?? false}
-                onValueChange={() => handleToggleSetting("showdefinition")}
-                trackColor={{ false: colors.border, true: colors.accent }}
-                disabled={settingsSaving !== null}
-              />
-            </View>
-
-            <View style={styles.settingsRow}>
-              <View style={styles.settingsInfo}>
-                <Text style={styles.settingsLabel}>Allow Proxies</Text>
-              </View>
-              <Switch
-                value={character?.allow_proxy ?? false}
-                onValueChange={() => handleToggleSetting("allow_proxy")}
-                trackColor={{ false: colors.border, true: colors.accent }}
-                disabled={settingsSaving !== null}
-              />
-            </View>
-
-            <View style={styles.settingsRow}>
-              <View style={styles.settingsInfo}>
-                <Text style={styles.settingsLabel}>Allow Published Chats</Text>
-              </View>
-              <Switch
-                value={character?.allow_published_chats ?? false}
-                onValueChange={() =>
-                  handleToggleSetting("allow_published_chats")
-                }
-                trackColor={{ false: colors.border, true: colors.accent }}
-                disabled={settingsSaving !== null}
-              />
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
-
-      <Modal
-        visible={reportVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={handleCloseReport}
-      >
-        <Pressable style={styles.settingsOverlay} onPress={handleCloseReport}>
-          <Pressable style={styles.settingsModal} onPress={() => {}}>
-            {reportPhase === 1 ? (
-              <>
-                <View style={styles.settingsHeader}>
-                  <Text style={styles.settingsTitle}>Report Character</Text>
-                  <Pressable onPress={handleCloseReport}>
-                    <Text style={styles.settingsClose}>{"✕"}</Text>
-                  </Pressable>
-                </View>
-                <Text style={styles.reportSubtitle}>
-                  Why are you reporting this character?
-                </Text>
-                {reportReasons.map((r) => {
-                  const selected = reportType === r.type;
-                  return (
-                    <Pressable
-                      key={r.type}
-                      onPress={() => handleSelectReportReason(r.label, r.type)}
-                      style={[
-                        styles.reportRadioItem,
-                        selected && styles.reportRadioItemSelected,
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.reportRadio,
-                          selected && styles.reportRadioSelected,
-                        ]}
-                      >
-                        {selected && <View style={styles.reportRadioDot} />}
-                      </View>
-                      <Text style={styles.reportRadioText}>{r.label}</Text>
-                    </Pressable>
-                  );
-                })}
-                <Pressable
-                  onPress={handleContinueReport}
-                  style={[
-                    styles.reportContinueBtn,
-                    !reportType && styles.reportContinueBtnDisabled,
-                  ]}
-                  disabled={!reportType}
-                >
-                  <Text
-                    style={[
-                      styles.reportContinueText,
-                      !reportType && styles.reportContinueTextDisabled,
-                    ]}
-                  >
-                    Continue
-                  </Text>
-                </Pressable>
-              </>
-            ) : (
-              <>
-                <View style={styles.settingsHeader}>
-                  <Pressable onPress={() => setReportPhase(1)} style={styles.reportBackBtn}>
-                    <Text style={styles.reportBackArrow}>{"\u2190"}</Text>
-                  </Pressable>
-                  <Text style={styles.settingsTitle}>Report Character</Text>
-                  <Pressable onPress={handleCloseReport}>
-                    <Text style={styles.settingsClose}>{"✕"}</Text>
-                  </Pressable>
-                </View>
-                <View style={styles.reportReasonChip}>
-                  <Text style={styles.reportReasonChipText}>{reportReason}</Text>
-                </View>
-
-                {reportType === "stolen" && (
-                  <>
-                    <Text style={styles.reportLabel}>
-                      Link to your original bot
-                    </Text>
-                    <TextInput
-                      style={styles.reportInput}
-                      placeholder="https://janitorai.com/characters/..."
-                      placeholderTextColor={colors.textDim}
-                      value={reportLink}
-                      onChangeText={setReportLink}
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                    />
-                  </>
-                )}
-
-                <Text style={styles.reportLabel}>
-                  {reportType === "stolen"
-                    ? "Additional details (optional)"
-                    : "Tell us more"}
-                </Text>
-                <TextInput
-                  style={[styles.reportInput, styles.reportTextArea]}
-                  placeholder={
-                    reportType === "stolen"
-                      ? "Any other details..."
-                      : "Describe the issue (at least 5 characters)"
-                  }
-                  placeholderTextColor={colors.textDim}
-                  value={reportDetails}
-                  onChangeText={setReportDetails}
-                  multiline
-                  textAlignVertical="top"
-                />
-
-                <Pressable
-                  onPress={handleSubmitReport}
-                  style={[
-                    styles.reportSubmitBtn,
-                    reportSubmitting && { opacity: 0.5 },
-                  ]}
-                  disabled={reportSubmitting}
-                >
-                  {reportSubmitting ? (
-                    <ActivityIndicator size="small" color={colors.white} />
-                  ) : (
-                    <Text style={styles.reportSubmitText}>Submit Report</Text>
-                  )}
-                </Pressable>
-              </>
-            )}
-          </Pressable>
-        </Pressable>
-      </Modal>
+      {character && (
+        <CharacterReportModal
+          visible={reportVisible}
+          characterId={character.id}
+          onClose={handleCloseReport}
+        />
+      )}
 
       {copyLoading && (
         <View style={styles.copyOverlay}>
@@ -813,21 +562,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-
-
-  menuItem: {
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+  favBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    height: 40,
+    gap: 6,
   },
-  menuItemText: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  menuItemDanger: {
-    color: colors.danger,
+  favCount: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginTop: 2
   },
   errorText: {
     color: colors.danger,
@@ -864,172 +609,5 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 16,
     fontWeight: "500",
-  },
-  settingsOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.8)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  settingsModal: {
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    width: "85%",
-    padding: 20,
-  },
-  settingsHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  settingsTitle: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  settingsClose: {
-    color: colors.textFaint,
-    fontSize: 18,
-    padding: 4,
-  },
-  settingsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  settingsInfo: {
-    flex: 1,
-    marginRight: 16,
-  },
-  settingsLabel: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  reportSubtitle: {
-    color: colors.textMuted,
-    fontSize: 14,
-    marginBottom: 20,
-    lineHeight: 20,
-  },
-  reportRadioItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  reportRadioItemSelected: {
-    borderColor: colors.accentFaded,
-    backgroundColor: colors.accentFaded
-  },
-  reportRadio: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: colors.textFaint,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  reportRadioSelected: {
-    borderColor: colors.accent,
-  },
-  reportRadioDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.accent,
-  },
-  reportRadioText: {
-    color: colors.text,
-    fontSize: 15,
-    flex: 1,
-    lineHeight: 21,
-  },
-  reportBackBtn: {
-    padding: 4,
-    marginRight: 4,
-  },
-  reportBackArrow: {
-    color: colors.accent,
-    fontSize: 20,
-    fontWeight: "600",
-  },
-  reportReasonChip: {
-    backgroundColor: colors.accentFaded,
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    marginBottom: 8,
-  },
-  reportReasonChipText: {
-    color: colors.accentLight,
-    fontSize: 14,
-    fontWeight: "500",
-  },
-  reportContinueBtn: {
-    backgroundColor: colors.accent,
-    borderRadius: 10,
-    paddingVertical: 15,
-    alignItems: "center",
-    marginTop: 24,
-  },
-  reportContinueBtnDisabled: {
-    backgroundColor: colors.border,
-  },
-  reportContinueText: {
-    color: colors.white,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  reportContinueTextDisabled: {
-    color: colors.textFaint,
-  },
-  reportLabel: {
-    color: colors.textMuted,
-    fontSize: 13,
-    marginBottom: 8,
-    marginTop: 16,
-    fontWeight: "500",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  reportInput: {
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    color: colors.text,
-    fontSize: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  reportTextArea: {
-    minHeight: 110,
-    paddingTop: 12,
-  },
-  reportSubmitBtn: {
-    backgroundColor: colors.danger,
-    borderRadius: 10,
-    paddingVertical: 15,
-    alignItems: "center",
-    marginTop: 24,
-  },
-  reportSubmitText: {
-    color: colors.white,
-    fontSize: 16,
-    fontWeight: "600",
   },
 });

@@ -61,7 +61,7 @@ export default function RegisterScreen() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const { register } = useAuthStore();
+  const register = useAuthStore((s) => s.register);
   const { showTurnstile } = useTurnstile();
 
   const handleRegister = useCallback(async () => {

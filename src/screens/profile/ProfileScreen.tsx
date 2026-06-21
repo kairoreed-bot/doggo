@@ -88,7 +88,7 @@ function MenuItem({
 // ---- Screen ----
 
 export default function ProfileScreen() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const { navigate } = useNavigation<Nav>();
   const isTablet = useIsTablet();
   const [profile, setProfile] = useState<UserProfile | null>(null);
