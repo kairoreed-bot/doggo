@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Doggy - a janitorAI client",
-    "slug": "doggy",
+    "name": "Doggo",
+    "slug": "doggo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -10,7 +10,7 @@
       "supportsTablet": true
     },
     "android": {
-      "package": "dev.michei.doggy",
+      "package": "dev.michei.doggo",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
