@@ -279,7 +279,6 @@ export default function GenerationSettingsScreen() {
   const deleteProxy = useCallback(
     (proxy: ProxyConfiguration) => {
       showAlert("Delete Proxy", `Delete "${proxy.name}"?`, [
-        { text: "Cancel", style: "cancel" },
         {
           text: "Delete",
           style: "destructive",
@@ -301,6 +300,7 @@ export default function GenerationSettingsScreen() {
             });
           },
         },
+        { text: "Cancel", style: "cancel" },
       ]);
     },
     [showAlert],

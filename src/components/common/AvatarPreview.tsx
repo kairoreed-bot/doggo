@@ -1,5 +1,12 @@
 import { useEffect } from "react";
-import { Modal, Pressable, Text, View, StyleSheet } from "react-native";
+import {
+  Modal,
+  Pressable,
+  Text,
+  View,
+  StyleSheet,
+  Dimensions,
+} from "react-native";
 import {
   Gesture,
   GestureDetector,
@@ -15,6 +22,9 @@ import { scheduleOnRN } from "react-native-worklets";
 
 const MAX_SCALE = 5;
 const MIN_SCALE = 1;
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
+const CX = SCREEN_W / 2;
+const CY = SCREEN_H / 2;
 
 export default function AvatarPreview({
   visible,
@@ -50,13 +60,16 @@ export default function AvatarPreview({
         Math.max(savedScale.value * e.scale, MIN_SCALE),
         MAX_SCALE,
       );
-      const scaleRatio = newScale / savedScale.value;
-      scale.value = newScale;
-      // Anchor zoom at focal point: the point under the fingers stays put
+      const s1 = savedScale.value;
+      const s2 = newScale;
+      scale.value = s2;
+      // Anchor zoom at focal point.
+      // RN default transformOrigin = "center", so formula uses 1/s2 - 1/s1,
+      // NOT (1 - scaleRatio) which assumes top-left origin.
       translateX.value =
-        e.focalX * (1 - scaleRatio) + savedTranslateX.value * scaleRatio;
+        (e.focalX - CX) * (1 / s2 - 1 / s1) + savedTranslateX.value;
       translateY.value =
-        e.focalY * (1 - scaleRatio) + savedTranslateY.value * scaleRatio;
+        (e.focalY - CY) * (1 / s2 - 1 / s1) + savedTranslateY.value;
     })
     .onEnd(() => {
       if (scale.value < MIN_SCALE) {

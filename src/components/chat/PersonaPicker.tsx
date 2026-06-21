@@ -27,6 +27,8 @@ export default function PersonaPicker({
   onClose,
   onSelect,
   characterName,
+  title,
+  subtitle,
 }: {
   visible: boolean;
   onClose: () => void;
@@ -34,6 +36,8 @@ export default function PersonaPicker({
     persona: { id: string; name: string; avatar: string } | null,
   ) => void;
   characterName: string;
+  title?: string;
+  subtitle?: string;
 }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [personas, setPersonas] = useState<Persona[]>([]);
@@ -88,8 +92,8 @@ export default function PersonaPicker({
     >
       <Pressable style={styles.overlay} onPress={onClose}>
         <Pressable style={styles.content} onPress={() => {}}>
-          <Text style={styles.title}>Start Chat with {characterName}</Text>
-          <Text style={styles.subtitle}>Choose a persona</Text>
+          <Text style={styles.title}>{title ?? `Start Chat with ${characterName}`}</Text>
+          <Text style={styles.subtitle}>{subtitle ?? "Choose a persona"}</Text>
 
           {loading ? (
             <ActivityIndicator

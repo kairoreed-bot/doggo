@@ -83,12 +83,12 @@ export default function SettingsScreen() {
 
   const handleLogout = useCallback(() => {
     Alert.alert("Logout", "Are you sure you want to log out?", [
-      { text: "Cancel", style: "cancel" },
       {
         text: "Logout",
         style: "destructive",
         onPress: () => logout(),
       },
+      { text: "Cancel", style: "cancel" },
     ]);
   }, [logout]);
 

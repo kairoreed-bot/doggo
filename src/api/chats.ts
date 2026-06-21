@@ -111,12 +111,13 @@ export async function clearAndResetMessages(
     );
     for (let i = 0; i < validIds.length; i += 256) {
         const batch = validIds.slice(i, i + 256);
+        if (batch.length < 1) break;
         await apiClient.delete(`/chats/${chatId}/messages`, {
             data: { message_ids: batch },
         });
     }
     if (firstMessages.length > 0) {
-        const body = firstMessages.map((msg, i) => ({
+        const body = firstMessages.reverse().map((msg, i) => ({
             chat_id: chatId,
             is_bot: true,
             is_main: i === 0,

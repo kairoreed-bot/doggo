@@ -196,11 +196,6 @@ export default function ChatListScreen() {
     );
     setAlertButtons([
       {
-        text: "Cancel",
-        style: "cancel",
-        onPress: () => setAlertVisible(false),
-      },
-      {
         text: "Delete",
         style: "destructive",
         onPress: async () => {
@@ -209,6 +204,11 @@ export default function ChatListScreen() {
             await deleteChat(targetChat.id);
           } catch {}
         },
+      },
+      {
+        text: "Cancel",
+        style: "cancel",
+        onPress: () => setAlertVisible(false),
       },
     ]);
     setAlertVisible(true);

@@ -456,9 +456,17 @@ export function useChat() {
                                         showTurnstile,
                                     );
                                     const savedMsg = rawResponse?.data ?? rawResponse;
-                                    storeRemoveMessages([tempMessage.id]);
                                     if (Array.isArray(savedMsg)) {
-                                        storeAddMessage(savedMsg[0]);
+                                        useChatStore.setState((s) => ({
+                                            messages: s.messages
+                                                .filter((m) => m.id !== tempMessage.id)
+                                                .map((m) =>
+                                                    m.is_bot && m.id > 0
+                                                        ? { ...m, is_main: false }
+                                                        : m,
+                                                )
+                                                .concat({ ...savedMsg[0], is_main: true }),
+                                        }));
                                     }
                                 } catch {}
                             }
@@ -605,9 +613,17 @@ export function useChat() {
                                         showTurnstile,
                                     );
                                     const savedMsg = rawResponse?.data ?? rawResponse;
-                                    storeRemoveMessages([tempMessage.id]);
                                     if (Array.isArray(savedMsg)) {
-                                        storeAddMessage(savedMsg[0]);
+                                        useChatStore.setState((s) => ({
+                                            messages: s.messages
+                                                .filter((m) => m.id !== tempMessage.id)
+                                                .map((m) =>
+                                                    m.is_bot && m.id > 0
+                                                        ? { ...m, is_main: false }
+                                                        : m,
+                                                )
+                                                .concat({ ...savedMsg[0], is_main: true }),
+                                        }));
                                     }
                                 } catch {}
                             }

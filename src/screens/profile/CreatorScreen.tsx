@@ -14,6 +14,7 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
+  Alert,
 } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import {
@@ -21,10 +22,11 @@ import {
   useNavigation,
   type RouteProp,
 } from "@react-navigation/native";
+import { useAuthStore } from "../../stores/authStore";
 import Avatar from "../../components/common/Avatar";
 import AvatarPreview from "../../components/common/AvatarPreview";
 import CharacterCard from "../../components/character/CharacterCard";
-import { getProfile } from "../../api/profile";
+import { getProfile, followUser, unfollowUser, getMyFollowing } from "../../api/profile";
 import { getCharacters } from "../../api/characters";
 import { stripHtml } from "../../utils/markdown";
 import { assetUrl, avatarUrl } from "../../utils/assets";
@@ -106,13 +108,39 @@ export default function CreatorScreen() {
     }
   }, [navigation.getState]);
 
+  const currentUser = useAuthStore((s) => s.user);
+  const isOwnProfile = currentUser?.id === userId;
+
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileError, setProfileError] = useState<string | null>(null);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [followingLoading, setFollowingLoading] = useState(false);
   const [aboutExpanded, setAboutExpanded] = useState(false);
   const [preview, setPreview] = useState<{ uri: string; name: string } | null>(
     null,
   );
+
+  const handleToggleFollow = useCallback(async () => {
+    if (followingLoading) return;
+    setFollowingLoading(true);
+    try {
+      if (isFollowing) {
+        await unfollowUser(userId);
+        setIsFollowing(false);
+        setFollowerCount((c) => Math.max(0, c - 1));
+      } else {
+        await followUser(userId);
+        setIsFollowing(true);
+        setFollowerCount((c) => c + 1);
+      }
+    } catch {
+      Alert.alert("Error", "Failed to update follow status");
+    } finally {
+      setFollowingLoading(false);
+    }
+  }, [userId, isFollowing, followingLoading]);
 
   const [list, dispatch] = useReducer(listReducer, {
     characters: [],
@@ -127,8 +155,13 @@ export default function CreatorScreen() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const profile = await getProfile(userId);
+        const [profile, following] = await Promise.all([
+          getProfile(userId),
+          isOwnProfile ? Promise.resolve([]) : getMyFollowing().catch(() => []),
+        ]);
         setProfile(profile);
+        setFollowerCount(parseInt(profile.followers_count ?? "0", 10) || 0);
+        setIsFollowing(following.some((f) => f.user_id === userId));
       } catch (err: any) {
         setProfileError(err.message || "Failed to load profile");
       } finally {
@@ -136,7 +169,7 @@ export default function CreatorScreen() {
       }
     };
     fetchProfile();
-  }, [userId]);
+  }, [userId, isOwnProfile]);
 
   const doFetch = useCallback(
     async (pageNum: number, isRefresh = false) => {
@@ -271,10 +304,39 @@ export default function CreatorScreen() {
 
       <View style={styles.statsRow}>
         <View style={styles.statItem}>
+          <Text style={styles.statValue}>{followerCount}</Text>
+          <Text style={styles.statLabel}>Followers</Text>
+        </View>
+        <View style={styles.statItem}>
           <Text style={styles.statValue}>{list.total}</Text>
           <Text style={styles.statLabel}>Characters</Text>
         </View>
       </View>
+
+      {!isOwnProfile && (
+        <Pressable
+          onPress={handleToggleFollow}
+          disabled={followingLoading}
+          style={({ pressed }) => [
+            styles.followBtn,
+            isFollowing && styles.followingBtn,
+            pressed && { opacity: 0.7 },
+          ]}
+        >
+          <Text
+            style={[
+              styles.followBtnText,
+              isFollowing && styles.followingBtnText,
+            ]}
+          >
+            {followingLoading
+              ? "..."
+              : isFollowing
+                ? "Following"
+                : "Follow"}
+          </Text>
+        </Pressable>
+      )}
     </View>
   );
 
@@ -424,10 +486,30 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   badgeTitle: { color: colors.textSecondary, fontSize: 13 },
-  statsRow: { marginTop: 16 },
+  statsRow: { marginTop: 16, flexDirection: "row", gap: 32 },
   statItem: { alignItems: "center" },
   statValue: { color: colors.text, fontSize: 20, fontWeight: "700" },
   statLabel: { color: colors.textDim, fontSize: 12, marginTop: 2 },
   footerLoader: { paddingVertical: 20 },
   errorText: { color: colors.danger, fontSize: 16 },
+  followBtn: {
+    marginTop: 16,
+    backgroundColor: colors.accent,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 32,
+  },
+  followingBtn: {
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.accent,
+  },
+  followBtnText: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  followingBtnText: {
+    color: colors.accent,
+  },
 });

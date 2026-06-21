@@ -154,3 +154,30 @@ export async function updateBlockedContent(
     });
     return response.data;
 }
+
+export async function followUser(userId: string): Promise<boolean> {
+    const response = await apiClient.post<boolean>("/following/follow", {
+        userId,
+    });
+    return response.data;
+}
+
+export async function unfollowUser(userId: string): Promise<boolean> {
+    const response = await apiClient.post<boolean>("/following/unfollow", {
+        userId,
+    });
+    return response.data;
+}
+
+export interface FollowingEntry {
+    user_id: string;
+    user_name: string;
+    avatar: string;
+}
+
+export async function getMyFollowing(): Promise<FollowingEntry[]> {
+    const response = await apiClient.get<FollowingEntry[]>(
+        "/following/v2/myfollowing",
+    );
+    return response.data;
+}

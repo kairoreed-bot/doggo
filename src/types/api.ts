@@ -317,6 +317,7 @@ export interface UserProfile {
     user_name: string;
     about_me: string;
     is_verified: boolean;
+    followers_count?: string;
     config: {
         allow_mobile_nsfw: boolean;
         api: string;

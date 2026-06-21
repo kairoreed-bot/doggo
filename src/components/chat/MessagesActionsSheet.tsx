@@ -9,12 +9,14 @@ export default function MessagesActionsSheet({
   onExport,
   onImport,
   onReset,
+  onSwitchPersona,
 }: {
   visible: boolean;
   onClose: () => void;
   onExport: () => void;
   onImport: () => void;
   onReset: () => void;
+  onSwitchPersona?: () => void;
 }) {
   const optionStyle = useCallback(
     ({ pressed }: { pressed: boolean }) => [
@@ -39,6 +41,11 @@ export default function MessagesActionsSheet({
     onReset();
   }, [onClose, onReset]);
 
+  const handleSwitchPersona = useCallback(() => {
+    onClose();
+    onSwitchPersona?.();
+  }, [onClose, onSwitchPersona]);
+
   return (
     <CustomBottomSheet visible={visible} onClose={onClose}>
       <View style={styles.content}>
@@ -53,6 +60,12 @@ export default function MessagesActionsSheet({
             Import Messages
           </Text>
         </Pressable>
+
+        {onSwitchPersona && (
+          <Pressable style={optionStyle} onPress={handleSwitchPersona}>
+            <Text style={[styles.optionText, styles.dangerText]}>Switch Persona</Text>
+          </Pressable>
+        )}
 
         <Pressable style={optionStyle} onPress={handleReset}>
           <Text style={[styles.optionText, styles.dangerText]}>

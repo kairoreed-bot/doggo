@@ -88,12 +88,20 @@ const MessageGroupRenderer = React.memo(
     onReroll?: () => void;
   }) {
     const [activeIdx, setActiveIdx] = useState(() => {
+      const last = group.messages[group.messages.length - 1];
+      if (last && last.id < 0) return group.messages.length - 1;
       const mainIdx = group.messages.findIndex((m) => m.is_main);
       return mainIdx >= 0 ? mainIdx : group.messages.length - 1;
     });
     const variantCount = group.messages.length;
 
     useEffect(() => {
+      const last = group.messages[variantCount - 1];
+      // Streaming temp placeholder (negative id) → show it, not is_main
+      if (last && last.id < 0) {
+        setActiveIdx(variantCount - 1);
+        return;
+      }
       const mainIdx = group.messages.findIndex((m) => m.is_main);
       setActiveIdx(mainIdx >= 0 ? mainIdx : variantCount - 1);
     }, [variantCount, group.messages]);

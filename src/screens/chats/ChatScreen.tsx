@@ -48,6 +48,7 @@ import {
   forkChat,
   attemptExtractSystemPrompt,
 } from "../../api/chats";
+import { apiClient } from "../../api/client";
 import ScreenHeader from "../../components/common/ScreenHeader";
 import { useKeyboardHeight } from "../../hooks/useKeyboardHeight";
 import { useIsTablet } from "../../hooks/useIsTablet";
@@ -63,6 +64,7 @@ import {
 import { toast } from "../../utils/toast";
 import { cleanTags, generify } from "../../utils/markdown";
 import { storage } from "../../utils/storage";
+import { getMyProfile } from "../../api/profile";
 
 type Route = RouteProp<ChatsStackParamList, "ChatScreen">;
 type Nav = NativeStackNavigationProp<ChatsStackParamList, "ChatScreen">;
@@ -137,6 +139,8 @@ export default function ChatScreen() {
   const [deleteAlertTitle, setDeleteAlertTitle] = useState("");
   const [deleteAlertMessage, setDeleteAlertMessage] = useState("");
   const [newChatPickerVisible, setNewChatPickerVisible] = useState(false);
+  const [switchPersonaPickerVisible, setSwitchPersonaPickerVisible] =
+    useState(false);
   const [allChatsVisible, setAllChatsVisible] = useState(false);
   const [allChats, setAllChats] = useState<ChatListItem[]>([]);
   const [allChatsLoading, setAllChatsLoading] = useState(false);
@@ -506,6 +510,42 @@ export default function ChatScreen() {
   }, [chatId]);
 
   const handleImport = useCallback(() => {
+    const importMessagesToServer = async (messages: ChatMessage[]) => {
+      try {
+        // Delete existing server messages first
+        const currentIds = useChatStore
+          .getState()
+          .messages.filter(
+            (m) => m.id > 0 && m.id <= 99000000000 && Number.isInteger(m.id),
+          )
+          .map((m) => m.id);
+        for (let i = 0; i < currentIds.length; i += 256) {
+          const batch = currentIds.slice(i, i + 256);
+          await apiClient.delete(`/chats/${chatId}/messages`, {
+            data: { message_ids: batch },
+          });
+        }
+        // Post imported messages in batches of 25
+        const body = messages.map((m) => ({
+          is_bot: m.is_bot,
+          is_main: m.is_main,
+          message: m.message,
+          metadata: m.metadata,
+          character_id: characterId,
+          chat_id: chatId,
+          created_at: m.created_at,
+        }));
+        for (let i = 0; i < body.length; i += 10) {
+          const batch = body.slice(i, i + 10).reverse();
+          await apiClient.post(`/chats/${chatId}/messages`, batch);
+        }
+        await loadMessages(chatId);
+        toast("Messages imported successfully");
+      } catch {
+        toast("Failed to import messages", "error");
+      }
+    };
+
     setDeleteAlertTitle("Import Messages");
     setDeleteAlertMessage(
       "This will replace all current messages with the imported ones. Continue?",
@@ -551,7 +591,7 @@ export default function ChatScreen() {
                     setDeleteAlertVisible(true);
                     return;
                   }
-                  storeReplaceMessages(result.messages);
+                  await importMessagesToServer(result.messages);
                 } catch {}
               },
             },
@@ -581,7 +621,7 @@ export default function ChatScreen() {
                     setDeleteAlertVisible(true);
                     return;
                   }
-                  storeReplaceMessages(result.messages);
+                  await importMessagesToServer(result.messages);
                 } catch {}
               },
             },
@@ -826,6 +866,92 @@ export default function ChatScreen() {
     setActionsTarget(null);
   }, [actionsTarget, chatId, editMsg]);
 
+  const handleSwitchPersona = useCallback(() => {
+    setDeleteAlertTitle("Switch Persona");
+    setDeleteAlertMessage(
+      "This action is irreversible. All messages will be transferred to the new persona. Continue?",
+    );
+    setDeleteAlertButtons([
+      {
+        text: "Continue",
+        onPress: () => {
+          setDeleteAlertVisible(false);
+          setSwitchPersonaPickerVisible(true);
+        },
+      },
+      {
+        text: "Cancel",
+        style: "cancel",
+        onPress: () => setDeleteAlertVisible(false),
+      },
+    ]);
+    setDeleteAlertVisible(true);
+  }, []);
+
+  const handleSwitchPersonaSelect = useCallback(
+    async (
+      persona: { id: string; name: string; avatar: string } | null,
+    ) => {
+      setSwitchPersonaPickerVisible(false);
+      if (!activeChatDetail) return;
+
+      let profile = null
+      if (!persona) profile = await getMyProfile();
+      const currentMessages = useChatStore.getState().messages;
+      const serverIds = currentMessages
+        .filter((m) => m.id > 0)
+        .map((m) => m.id);
+
+      try {
+        // Delete all server messages
+        const validIds = serverIds.filter(
+          (id) => id > 0 && id <= 99000000000 && Number.isInteger(id),
+        );
+        for (let i = 0; i < validIds.length; i += 256) {
+          const batch = validIds.slice(i, i + 256);
+          await apiClient.delete(`/chats/${chatId}/messages`, {
+            data: { message_ids: batch },
+          });
+        }
+
+        // Re-create all messages with new persona metadata, batches of 10
+        const newPersonaId = persona?.id ?? null;
+        const newPersonaName = persona?.name ?? profile?.name ?? "user";
+        const newPersonaAvatar = persona?.avatar ?? "";
+
+        const msgBodies = currentMessages.map((m) => ({
+          is_bot: m.is_bot,
+          is_main: m.is_main,
+          message: m.message.replaceAll(personaName, newPersonaName),
+          metadata: {
+            persona_id: newPersonaId,
+            persona_name: newPersonaName,
+            persona_avatar: newPersonaAvatar,
+          },
+          character_id: characterId,
+          chat_id: chatId,
+          created_at: m.created_at,
+        }));
+
+        for (let i = 0; i < msgBodies.length; i += 10) {
+          const batch = msgBodies.slice(i, i + 10).reverse();
+          await apiClient.post(`/chats/${chatId}/messages`, batch);
+        }
+
+        await loadMessages(chatId);
+        toast("Persona switched successfully");
+      } catch {
+        toast("Failed to switch persona", "error");
+      }
+    },
+    [chatId, characterId, activeChatDetail, loadMessages, personaName],
+  );
+
+  const handleSwitchPersonaPickerClose = useCallback(
+    () => setSwitchPersonaPickerVisible(false),
+    [],
+  );
+
   const chatContent = (
     <>
       {error ? (
@@ -943,6 +1069,7 @@ export default function ChatScreen() {
         onExport={handleExport}
         onImport={handleImport}
         onReset={handleReset}
+        onSwitchPersona={handleSwitchPersona}
       />
 
       <MessageActions
@@ -978,6 +1105,15 @@ export default function ChatScreen() {
         onClose={handleNewChatPickerClose}
         onSelect={handleNewChatPersonaSelect}
         characterName={characterName}
+      />
+
+      <PersonaPicker
+        visible={switchPersonaPickerVisible}
+        onClose={handleSwitchPersonaPickerClose}
+        onSelect={handleSwitchPersonaSelect}
+        characterName={characterName}
+        title="Switch Persona"
+        subtitle="Messages will be transferred to the selected persona"
       />
 
       <CustomAlert

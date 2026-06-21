@@ -18,6 +18,7 @@ import Animated, {
   withSpring,
   withTiming,
   cancelAnimation,
+  runOnUI,
 } from "react-native-reanimated";
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
@@ -261,6 +262,10 @@ export default function PersonaSheet({
         { format: ImageManipulator.SaveFormat.WEBP, compress: 0.85 },
       );
 
+      scheduleOnRN(() => {
+        requestAnimationFrame(() => animateIn());
+      });
+
       const upload = await uploadFile("webp", "avatar");
 
       await new Promise<void>((resolve, reject) => {
@@ -284,7 +289,7 @@ export default function PersonaSheet({
     } finally {
       setUploading(false);
     }
-  }, []);
+  }, [translateY, backdropOpacity]);
 
   const handleSave = useCallback(async () => {
     if (!form.name.trim()) {
