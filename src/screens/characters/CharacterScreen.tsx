@@ -71,11 +71,16 @@ export default function CharacterScreen() {
   const [favLoading, setFavLoading] = useState(false);
   const [favoriteCount, setFavoriteCount] = useState(0);
   const [reportVisible, setReportVisible] = useState(false);
+  const [dateFormat, setDateFormat] = useState<"relative" | "absolute">("relative");
   const user = useAuthStore((s) => s.user);
   const createChat = useChatStore((s) => s.createChat);
 
   const isTablet = useIsTablet();
   const isOwner = character?.creator_id === user?.id;
+
+  useEffect(() => {
+    storage.getDateFormat().then(setDateFormat);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -464,6 +469,7 @@ export default function CharacterScreen() {
         isLoading={loading}
         isTablet={isTablet}
         isOwner={isOwner}
+        dateFormat={dateFormat}
       />
 
       <PersonaPicker

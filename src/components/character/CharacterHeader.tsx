@@ -14,6 +14,7 @@ import { htmlToMarkdown } from "../../utils/markdown";
 import { markdownStyle } from "../../utils/markdownStyle";
 import { botAvatarUrl } from "../../utils/assets";
 import { colors } from "../../utils/colors";
+import { formatDate } from "../../utils/time";
 
 export default function CharacterHeader({
   character,
@@ -22,6 +23,7 @@ export default function CharacterHeader({
   isLoading,
   isTablet = false,
   isOwner = false,
+  dateFormat = "relative",
 }: {
   character: CharacterDetail;
   onStartChat: () => void;
@@ -29,6 +31,7 @@ export default function CharacterHeader({
   isLoading: boolean;
   isTablet?: boolean;
   isOwner?: boolean;
+  dateFormat?: "relative" | "absolute";
 }) {
   const [descExpanded, setDescExpanded] = useState(false);
   const [descTruncated, setDescTruncated] = useState(false);
@@ -112,6 +115,24 @@ export default function CharacterHeader({
           ))}
         </View>
       )}
+
+      <View style={styles.datesRow}>
+        <Text style={styles.dateText}>
+          Created {formatDate(character.created_at, dateFormat)}
+        </Text>
+        <Text style={styles.dateSep}>·</Text>
+        <Text style={styles.dateText}>
+          Updated {formatDate(character.updated_at, dateFormat)}
+        </Text>
+        {character.first_published_at ? (
+          <>
+            <Text style={styles.dateSep}>·</Text>
+            <Text style={styles.dateText}>
+              Published {formatDate(character.first_published_at, dateFormat)}
+            </Text>
+          </>
+        ) : null}
+      </View>
 
       <View style={styles.stats}>
         <View style={styles.statItem}>
@@ -374,6 +395,22 @@ const styles = StyleSheet.create({
     marginTop: 14,
     justifyContent: "center",
     paddingHorizontal: 16,
+  },
+  datesRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 14,
+    paddingHorizontal: 16,
+  },
+  dateText: {
+    color: colors.textDim,
+    fontSize: 12,
+  },
+  dateSep: {
+    color: colors.textFaint,
+    fontSize: 12,
   },
   stats: {
     flexDirection: "row",

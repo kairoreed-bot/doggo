@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -20,6 +20,7 @@ import { useAuthStore } from "../../stores/authStore";
 import { useChatStore } from "../../stores/chatStore";
 import { useIsTablet } from "../../hooks/useIsTablet";
 import { colors } from "../../utils/colors";
+import { storage } from "../../utils/storage";
 
 type LayoutOption = "messaging" | "janitor" | "edgeToEdge";
 
@@ -72,8 +73,13 @@ export default function SettingsScreen() {
   const chatCentered = useChatStore((s) => s.chatCentered);
   const setChatCentered = useChatStore((s) => s.setChatCentered);
   const isTablet = useIsTablet();
+  const [dateFormat, setDateFormat] = useState<"relative" | "absolute">("relative");
   const [layoutPickerVisible, setLayoutPickerVisible] = useState(false);
   const [wrapperPickerVisible, setWrapperPickerVisible] = useState(false);
+
+  useEffect(() => {
+    storage.getDateFormat().then(setDateFormat);
+  }, []);
 
   const handleLogout = useCallback(() => {
     Alert.alert("Logout", "Are you sure you want to log out?", [
@@ -188,6 +194,27 @@ export default function SettingsScreen() {
             </View>
             <Text style={styles.settingChevron}>›</Text>
           </Pressable>
+
+          <View style={styles.toggleRow}>
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>Date Format</Text>
+              <Text style={styles.settingValue}>
+                {dateFormat === "relative"
+                  ? "Relative (2d, 3mo, 1y)"
+                  : "Absolute (January 15, 2024)"}
+              </Text>
+            </View>
+            <Switch
+              value={dateFormat === "relative"}
+              onValueChange={(val) => {
+                const next = val ? "relative" : "absolute";
+                setDateFormat(next);
+                storage.setDateFormat(next);
+              }}
+              trackColor={{ false: colors.border, true: colors.accent }}
+              thumbColor={colors.text}
+            />
+          </View>
         </View>
 
         <View style={styles.section}>

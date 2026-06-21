@@ -158,6 +158,15 @@ export const storage = {
         await AsyncStorage.removeItem(STORAGE_KEYS.EDIT_BOT_STATE);
     },
 
+    async setDateFormat(mode: "relative" | "absolute"): Promise<void> {
+        await AsyncStorage.setItem(STORAGE_KEYS.DATE_FORMAT, mode);
+    },
+
+    async getDateFormat(): Promise<"relative" | "absolute"> {
+        const v = await AsyncStorage.getItem(STORAGE_KEYS.DATE_FORMAT);
+        return v === "absolute" ? "absolute" : "relative";
+    },
+
     async getChatLocalData(chatId: number): Promise<ChatLocalData | null> {
         const key = `${STORAGE_KEYS.CHAT_LOCAL_DATA_PREFIX}${chatId}`;
         const data = await AsyncStorage.getItem(key);
