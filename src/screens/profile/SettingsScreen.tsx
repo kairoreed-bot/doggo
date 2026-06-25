@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
   },
   placeholderText: { color: colors.textFaint, fontSize: 14 },
   versionText: { color: colors.textDim, fontSize: 12, marginTop: 4 },
-  logoutBtn: { marginTop: 16 },
+  logoutBtn: { marginBottom: 28 },
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.6)",

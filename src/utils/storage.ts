@@ -183,6 +183,18 @@ export const storage = {
         await AsyncStorage.removeItem(key);
     },
 
+    async getHiddenCharacters(): Promise<string[]> {
+        const data = await AsyncStorage.getItem(STORAGE_KEYS.HIDDEN_CHARACTERS);
+        return data ? JSON.parse(data) : [];
+    },
+
+    async setHiddenCharacters(ids: string[]): Promise<void> {
+        await AsyncStorage.setItem(
+            STORAGE_KEYS.HIDDEN_CHARACTERS,
+            JSON.stringify(ids),
+        );
+    },
+
     async clearAll(): Promise<void> {
         await Promise.all([
             SecureStore.deleteItemAsync(STORAGE_KEYS.ACCESS_TOKEN),

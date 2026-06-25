@@ -20,6 +20,7 @@ export const STORAGE_KEYS = {
     CREATE_BOT_STATE: "create_bot_state",
     EDIT_BOT_STATE: "edit_bot_state",
     CHAT_LOCAL_DATA_PREFIX: "chat_local_",
+    HIDDEN_CHARACTERS: "hidden_characters",
 } as const;
 
 export const SUPABASE_ANON_KEY =

@@ -45,6 +45,18 @@ export async function setMessageMain(
     return response.data;
 }
 
+export async function setMessageMainState(
+    chatId: number,
+    messageId: number,
+    isMain: boolean,
+): Promise<SuccessResponse> {
+    const response = await apiClient.patch<SuccessResponse>(
+        `/chats/${chatId}/messages/${messageId}`,
+        { is_main: isMain },
+    );
+    return response.data;
+}
+
 export async function editMessage(
     chatId: number,
     messageId: number,

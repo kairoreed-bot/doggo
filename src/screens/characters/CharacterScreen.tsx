@@ -217,7 +217,7 @@ export default function CharacterScreen() {
     try {
       let personality = "";
       let scenario = "";
-      const charName = character.chat_name ?? character.name;
+      const charName = character.chat_name || character.name;
 
       if (character.allow_proxy) {
         const minimalDetail = {

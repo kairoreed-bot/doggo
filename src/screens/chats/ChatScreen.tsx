@@ -300,7 +300,7 @@ export default function ChatScreen() {
         const prompt = await fetchSystemPrompt(detail);
         setSystemPromptContent(prompt);
         const characterName =
-          detail.character.chat_name ?? detail.character.name;
+          detail.character.chat_name || detail.character.name;
 
         const { personality, scenario } = processSystemMessage(
           prompt,
@@ -348,7 +348,7 @@ export default function ChatScreen() {
 
           const { character_id } = detail.chat;
           const characterName =
-            detail.character.chat_name ?? detail.character.name;
+            detail.character.chat_name || detail.character.name;
 
           const doExtraction = async () => {
             console.log("extracting");
@@ -972,6 +972,7 @@ export default function ChatScreen() {
           messages={messages}
           isLoading={isLoadingMessages}
           currentUserId={user?.id}
+          chatId={chatId}
           onEdit={handleEdit}
           onDelete={handleDeleteBubble}
           onMessageLongPress={handleMessageLongPress}

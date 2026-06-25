@@ -19,7 +19,10 @@ import { FlashList } from "@shopify/flash-list";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import CharacterCard from "../../components/character/CharacterCard";
+import CharacterDiscoverActionsSheet from "../../components/character/CharacterDiscoverActionsSheet";
+import CharacterReportModal from "../../components/character/CharacterReportModal";
 import { getCharacters, getTags } from "../../api/characters";
+import { getBlockedContent, updateBlockedContent } from "../../api/profile";
 import type { CharacterSearchParams } from "../../api/characters";
 import type { TrendingCharacter, TrendingResponse } from "../../types/api";
 import type { CharactersStackParamList } from "../../navigation/types";
@@ -41,6 +44,9 @@ import { colors } from "../../utils/colors";
 import { useIsTablet } from "../../hooks/useIsTablet";
 import { SlidersHorizontal, Filter } from "lucide-react-native";
 import AdvancedSearchModal from "../../components/discover/AdvancedSearchModal";
+import CustomAlert, {
+  type AlertButton,
+} from "../../components/common/CustomAlert";
 
 type Nav = NativeStackNavigationProp<
   CharactersStackParamList,
@@ -186,6 +192,39 @@ export default function CharacterSearchScreen() {
     "any",
   );
   const [advancedSearchVisible, setAdvancedSearchVisible] = useState(false);
+
+  const [longPressCharacter, setLongPressCharacter] = useState<TrendingCharacter | null>(null);
+  const [actionsVisible, setActionsVisible] = useState(false);
+  const [reportVisible, setReportVisible] = useState(false);
+
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertTitle, setAlertTitle] = useState("");
+  const [alertMessage, setAlertMessage] = useState("");
+  const [alertButtons, setAlertButtons] = useState<AlertButton[]>([]);
+
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
+  const hiddenLoadedRef = useRef(false);
+
+  useEffect(() => {
+    if (hiddenLoadedRef.current) return;
+    hiddenLoadedRef.current = true;
+    storage.getHiddenCharacters().then((ids) => {
+      setHiddenIds(new Set(ids));
+    });
+  }, []);
+
+  const handleToggleHidden = useCallback((characterId: string) => {
+    setHiddenIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(characterId)) {
+        next.delete(characterId);
+      } else {
+        next.add(characterId);
+      }
+      storage.setHiddenCharacters([...next]);
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     if (filtersLoadedRef.current) return;
@@ -389,6 +428,68 @@ export default function CharacterSearchScreen() {
     return result;
   }, [state.characters, advancedKeywords, advancedBlacklist, keywordMatchMode]);
 
+  const handleLongPress = useCallback((item: TrendingCharacter) => {
+    setLongPressCharacter(item);
+    setActionsVisible(true);
+  }, []);
+
+  const handleViewCharacter = useCallback(() => {
+    if (!longPressCharacter) return;
+    navigate("CharacterScreen", {
+      characterId: longPressCharacter.id,
+      characterName: longPressCharacter.name,
+    });
+  }, [longPressCharacter, navigate]);
+
+  const handleViewCreator = useCallback(() => {
+    if (!longPressCharacter?.creator_id) return;
+    navigate("CreatorScreen", {
+      userId: longPressCharacter.creator_id,
+      userName: longPressCharacter.creator_name || "Creator",
+    });
+  }, [longPressCharacter, navigate]);
+
+  const handleBlockCharacter = useCallback(() => {
+    if (!longPressCharacter) return;
+    setAlertTitle("Block Character");
+    setAlertMessage(
+      `Block "${longPressCharacter.name}"? Hidden characters won't appear in your discover feed.`,
+    );
+    setAlertButtons([
+      {
+        text: "Block",
+        style: "destructive",
+        onPress: async () => {
+          setAlertVisible(false);
+          try {
+            const blocked = await getBlockedContent();
+            if (!blocked.bots.includes(longPressCharacter.id)) {
+              blocked.bots.push(longPressCharacter.id);
+            }
+            await updateBlockedContent(blocked);
+          } catch {}
+        },
+      },
+      { text: "Cancel", style: "cancel", onPress: () => setAlertVisible(false) },
+    ]);
+    setAlertVisible(true);
+  }, [longPressCharacter]);
+
+  const handleReportCharacter = useCallback(() => {
+    setActionsVisible(false);
+    setReportVisible(true);
+  }, []);
+
+  const handleCloseReport = useCallback(() => {
+    setReportVisible(false);
+  }, []);
+
+  const handleActionsClose = useCallback(() => {
+    setActionsVisible(false);
+  }, []);
+
+  const handleAlertDismiss = useCallback(() => setAlertVisible(false), []);
+
   const renderItem = useCallback(
     ({ item }: { item: TrendingCharacter }) => (
       <CharacterCard
@@ -399,10 +500,13 @@ export default function CharacterSearchScreen() {
             characterName: item.name,
           })
         }
+        onLongPress={() => handleLongPress(item)}
+        hidden={hiddenIds.has(item.id)}
+        onToggleHidden={() => handleToggleHidden(item.id)}
         style={isTablet ? styles.cardTablet : undefined}
       />
     ),
-    [navigate, isTablet],
+    [navigate, isTablet, handleLongPress, hiddenIds, handleToggleHidden],
   );
 
   const sortLabel =
@@ -537,6 +641,31 @@ export default function CharacterSearchScreen() {
         onBlacklistedChange={setAdvancedBlacklist}
         onMatchModeChange={setKeywordMatchMode}
         onClose={() => setAdvancedSearchVisible(false)}
+      />
+
+      <CharacterDiscoverActionsSheet
+        visible={actionsVisible}
+        characterName={longPressCharacter?.name || ""}
+        hasCreator={!!longPressCharacter?.creator_id}
+        onClose={handleActionsClose}
+        onViewCharacter={handleViewCharacter}
+        onViewCreator={handleViewCreator}
+        onBlockCharacter={handleBlockCharacter}
+        onReportCharacter={handleReportCharacter}
+      />
+
+      <CharacterReportModal
+        visible={reportVisible}
+        characterId={longPressCharacter?.id ?? ""}
+        onClose={handleCloseReport}
+      />
+
+      <CustomAlert
+        visible={alertVisible}
+        title={alertTitle}
+        message={alertMessage}
+        buttons={alertButtons}
+        onDismiss={handleAlertDismiss}
       />
     </View>
   );

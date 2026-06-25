@@ -19,6 +19,7 @@ import type { ChatMessage } from "../../types/api";
 import { colors } from "../../utils/colors";
 import { useChatStore } from "../../stores/chatStore";
 import { scheduleOnRN } from "react-native-worklets";
+import { setMessageMainState } from "../../api/chats";
 
 export interface MessageGroup {
   messages: ChatMessage[];
@@ -59,6 +60,7 @@ const MessageGroupRenderer = React.memo(
   function MessageGroupRenderer({
     group,
     isLast,
+    chatId,
     onEdit,
     onDelete,
     onMessageLongPress,
@@ -74,6 +76,7 @@ const MessageGroupRenderer = React.memo(
   }: {
     group: MessageGroup;
     isLast: boolean;
+    chatId?: number;
     onEdit: (messageId: number, newContent: string) => void;
     onDelete: (messageId: number) => void;
     onMessageLongPress?: (message: ChatMessage) => void;
@@ -116,17 +119,39 @@ const MessageGroupRenderer = React.memo(
     safeIdxRef.current = safeIdx;
     const variantCountRef = useRef(variantCount);
     variantCountRef.current = variantCount;
+    const groupRef = useRef(group);
+    groupRef.current = group;
+    const chatIdRef = useRef(chatId);
+    chatIdRef.current = chatId;
+
+    const syncVariantToServer = useCallback((newIdx: number) => {
+      const g = groupRef.current;
+      const cId = chatIdRef.current;
+      if (!g.isBot || g.messages.length <= 1 || !cId) return;
+      const chosen = g.messages[newIdx];
+      if (!chosen) return;
+      for (const msg of g.messages) {
+        const isMain = msg.id === chosen.id;
+        if (msg.is_main !== isMain) {
+          setMessageMainState(cId, msg.id, isMain).catch(() => {});
+        }
+      }
+    }, []);
 
     const goNext = useCallback(() => {
       if (safeIdxRef.current >= variantCountRef.current - 1) {
         onRerollRef.current?.();
       } else {
-        setActiveIdx((i) => Math.min(variantCountRef.current - 1, i + 1));
+        const newIdx = Math.min(variantCountRef.current - 1, safeIdxRef.current + 1);
+        setActiveIdx(newIdx);
+        syncVariantToServer(newIdx);
       }
     }, []);
 
     const goPrev = useCallback(() => {
-      setActiveIdx((i) => Math.max(0, i - 1));
+      const newIdx = Math.max(0, safeIdxRef.current - 1);
+      setActiveIdx(newIdx);
+      syncVariantToServer(newIdx);
     }, []);
 
     useEffect(() => {
@@ -283,6 +308,7 @@ export default function MessageList({
   messages,
   isLoading,
   currentUserId,
+  chatId,
   onEdit,
   onDelete,
   onMessageLongPress,
@@ -299,6 +325,7 @@ export default function MessageList({
   messages: ChatMessage[];
   isLoading: boolean;
   currentUserId: string | undefined;
+  chatId?: number;
   onEdit: (messageId: number, newContent: string) => void;
   onDelete: (messageId: number) => void;
   onMessageLongPress?: (message: ChatMessage) => void;
@@ -366,6 +393,7 @@ export default function MessageList({
         <MessageGroupRenderer
           group={item}
           isLast={isLast}
+          chatId={chatId}
           onEdit={onEdit}
           onDelete={onDelete}
           onMessageLongPress={onMessageLongPress}
@@ -383,6 +411,7 @@ export default function MessageList({
     },
     [
       groups.length,
+      chatId,
       onEdit,
       onDelete,
       onMessageLongPress,

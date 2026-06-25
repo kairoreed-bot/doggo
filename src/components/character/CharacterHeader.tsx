@@ -190,7 +190,7 @@ export default function CharacterHeader({
       )}
 
       <Button
-        title={`Start chatting with ${character.chat_name ?? character.name}`}
+        title={`Start chatting with ${character.chat_name || character.name}`}
         onPress={onStartChat}
         loading={isLoading}
         style={onContinueChat ? [styles.startBtn, styles.startBtnWithContinue] : styles.startBtn}

@@ -319,7 +319,7 @@ export default function GenerationSettingsScreen() {
     try {
       const detail = useChatStore.getState().activeChatDetail;
       if (!detail) throw new Error("Chat not loaded");
-      const characterName = detail.character.chat_name ?? detail.character.name;
+      const characterName = detail.character.chat_name || detail.character.name;
       try {
         const prompt = await fetchSystemPrompt(detail);
         const { personality } = processSystemMessage(prompt, characterName);
@@ -352,7 +352,7 @@ export default function GenerationSettingsScreen() {
     try {
       const detail = useChatStore.getState().activeChatDetail;
       if (!detail) throw new Error("Chat not loaded");
-      const characterName = detail.character.chat_name ?? detail.character.name;
+      const characterName = detail.character.chat_name || detail.character.name;
       try {
         const prompt = await fetchSystemPrompt(detail);
         const { scenario } = processSystemMessage(prompt, characterName);

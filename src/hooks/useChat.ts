@@ -361,7 +361,7 @@ export function useChat() {
                     }
 
                     // Build system prompt: OpenAI completions format with persona tags
-                    const charName = detail.character.chat_name ?? detail.character.name;
+                    const charName = detail.character.chat_name || detail.character.name;
                     const activePersona = detail.chat.persona_id != null
                         ? detail.personas.find((p) => p.id === detail.chat.persona_id)
                         : detail.personas[0];
@@ -370,6 +370,10 @@ export function useChat() {
 
                     const systemParts: string[] = [];
                     const jailbreakPrompt = selectedProxy?.jailbreakPrompt || userConfig.open_ai_jailbreak_prompt;
+                    const globalPrompt = userConfig.proxy_global_prompt
+                    if (globalPrompt) {
+                        systemParts.push(globalPrompt)
+                    }
                     if (jailbreakPrompt) {
                         systemParts.push(jailbreakPrompt);
                     }
