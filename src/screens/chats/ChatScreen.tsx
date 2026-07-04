@@ -980,6 +980,7 @@ export default function ChatScreen() {
           onEditingDone={handleEditingDone}
           personaName={personaName}
           characterChatName={characterChatName}
+          personaPronouns={persona?.pronouns}
           characterAvatar={characterAvatar}
           personaAvatar={personaAvatar}
           activeThinking={activeThinking}

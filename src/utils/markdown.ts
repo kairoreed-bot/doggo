@@ -22,15 +22,33 @@ export function stripHtml(text?: string): string {
         : "";
 }
 
+import type { Pronouns } from "../types/api";
+
 export function replaceTags(
     text: string | null | undefined,
     personaName?: string,
     characterChatName?: string,
+    pronouns?: Pronouns | null,
 ): string {
-    return (text ?? "")
+    let result = (text ?? "")
         .replace(/{{user}}/gi, personaName ?? "user")
         .replace(/anon/gi, personaName ?? "user")
         .replace(/{{char}}/gi, characterChatName ?? "Character");
+
+    if (pronouns) {
+        result = result
+            .replace(/{{subj}}/gi, pronouns.subjective)
+            .replace(/{{subject}}/gi, pronouns.subjective)
+            .replace(/{{obj}}/gi, pronouns.objective)
+            .replace(/{{object}}/gi, pronouns.objective)
+            .replace(/{{poss}}/gi, pronouns.possessive)
+            .replace(/{{possessive}}/gi, pronouns.possessive)
+            .replace(/{{posadj}}/gi, pronouns.possessivePronoun)
+            .replace(/{{poss-adj}}/gi, pronouns.possessivePronoun)
+            .replace(/{{reflexive}}/gi, pronouns.reflexive);
+    }
+
+    return result;
 }
 
 const anonRegex = /(?<!\\w)Anon(?=(?:[^\\w']|$)|'s)/g

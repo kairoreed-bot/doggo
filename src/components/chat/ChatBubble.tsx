@@ -11,6 +11,7 @@ import TypingDots from "./TypingDots";
 import Avatar from "../common/Avatar";
 import AvatarPreview from "../common/AvatarPreview";
 import type { ChatMessage } from "../../types/api";
+import type { Pronouns } from "../../types/api";
 import { replaceTags } from "../../utils/markdown";
 import { markdownStyle, userMarkdownStyle } from "../../utils/markdownStyle";
 import { useChatStore } from "../../stores/chatStore";
@@ -39,6 +40,7 @@ export default React.memo(function ChatBubble({
   onEditingDone,
   personaName,
   characterChatName,
+  personaPronouns,
   characterAvatar,
   personaAvatar,
   activeThinking,
@@ -53,6 +55,7 @@ export default React.memo(function ChatBubble({
   onEditingDone?: () => void;
   personaName?: string;
   characterChatName?: string;
+  personaPronouns?: Pronouns | null;
   characterAvatar?: string;
   personaAvatar?: string;
   activeThinking?: string;
@@ -106,19 +109,19 @@ export default React.memo(function ChatBubble({
   const { thinking: messageThinking } = useMemo(() => {
     if (isEmpty || isUser) return { thinking: "", rest: "" };
     return extractThinking(
-      replaceTags(rawContent, personaName, characterChatName),
+      replaceTags(rawContent, personaName, characterChatName, personaPronouns),
     );
-  }, [rawContent, isEmpty, isUser, personaName, characterChatName]);
+  }, [rawContent, isEmpty, isUser, personaName, characterChatName, personaPronouns]);
 
   const thinkingContent = activeThinking || messageThinking;
   const showThinking = !isUser && !!thinkingContent && enableThinking;
   const displayContent = useMemo(() => {
     if (isEmpty || isUser)
-      return replaceTags(rawContent, personaName, characterChatName);
+      return replaceTags(rawContent, personaName, characterChatName, personaPronouns);
     return extractThinking(
-      replaceTags(rawContent, personaName, characterChatName),
+      replaceTags(rawContent, personaName, characterChatName, personaPronouns),
     ).rest;
-  }, [rawContent, isEmpty, isUser, personaName, characterChatName]);
+  }, [rawContent, isEmpty, isUser, personaName, characterChatName, personaPronouns]);
 
   const avatarUri = isUser ? personaAvatar : characterAvatar;
   const avatarName = isUser
