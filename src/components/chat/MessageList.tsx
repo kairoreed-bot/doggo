@@ -16,6 +16,7 @@ import { FlashList, type FlashListRef } from "@shopify/flash-list";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import ChatBubble from "./ChatBubble";
 import type { ChatMessage } from "../../types/api";
+import type { Pronouns } from "../../types/api";
 import { colors } from "../../utils/colors";
 import { useChatStore } from "../../stores/chatStore";
 import { scheduleOnRN } from "react-native-worklets";
@@ -84,6 +85,7 @@ const MessageGroupRenderer = React.memo(
     onEditingDone?: () => void;
     personaName?: string;
     characterChatName?: string;
+    personaPronouns?: Pronouns | null;
     characterAvatar?: string;
     personaAvatar?: string;
     activeThinking?: string;
@@ -198,6 +200,7 @@ const MessageGroupRenderer = React.memo(
                   onEditingDone={onEditingDone}
                   personaName={personaName}
                   characterChatName={characterChatName}
+                  personaPronouns={personaPronouns}
                   characterAvatar={characterAvatar}
                   personaAvatar={personaAvatar}
                   activeThinking={activeThinking}
@@ -219,6 +222,7 @@ const MessageGroupRenderer = React.memo(
               onEditingDone={onEditingDone}
               personaName={personaName}
               characterChatName={characterChatName}
+              personaPronouns={personaPronouns}
               characterAvatar={characterAvatar}
               personaAvatar={personaAvatar}
               enableThinking={enableThinking}
@@ -276,6 +280,7 @@ const MessageGroupRenderer = React.memo(
         onEditingDone={onEditingDone}
         personaName={personaName}
         characterChatName={characterChatName}
+        personaPronouns={personaPronouns}
         characterAvatar={characterAvatar}
         personaAvatar={personaAvatar}
       />
@@ -316,6 +321,7 @@ export default function MessageList({
   onEditingDone,
   personaName,
   characterChatName,
+  personaPronouns,
   characterAvatar,
   personaAvatar,
   activeThinking,
@@ -333,6 +339,7 @@ export default function MessageList({
   onEditingDone?: () => void;
   personaName?: string;
   characterChatName?: string;
+  personaPronouns?: Pronouns | null;
   characterAvatar?: string;
   personaAvatar?: string;
   activeThinking?: string;
@@ -401,6 +408,7 @@ export default function MessageList({
           onEditingDone={onEditingDone}
           personaName={personaName}
           characterChatName={characterChatName}
+          personaPronouns={personaPronouns}
           characterAvatar={characterAvatar}
           personaAvatar={personaAvatar}
           activeThinking={activeThinking}
@@ -419,6 +427,7 @@ export default function MessageList({
       onEditingDone,
       personaName,
       characterChatName,
+      personaPronouns,
       characterAvatar,
       personaAvatar,
       activeThinking,
