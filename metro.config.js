@@ -66,8 +66,12 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
   }
 
   if (moduleName.startsWith(workletsDirPath)) {
-    const fullModuleName = path.join(workletsPackageDir, moduleName);
-    return { type: "sourceFile", filePath: fullModuleName };
+    const fullModuleName = path.join(workletsPackageDir, moduleName.replace('react-native-worklets/', ''));
+    if (!fs.existsSync(fullModuleName)) {
+    fs.mkdirSync(path.dirname(fullModuleName), { recursive: true });
+    fs.writeFileSync(fullModuleName, 'export default function __w() {}');
+  }
+  return { type: "sourceFile", filePath: fullModuleName };
   }
 
   if (originalExpoResolver) {

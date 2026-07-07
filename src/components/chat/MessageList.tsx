@@ -69,6 +69,7 @@ const MessageGroupRenderer = React.memo(
     onEditingDone,
     personaName,
     characterChatName,
+    personaPronouns,
     characterAvatar,
     personaAvatar,
     activeThinking,

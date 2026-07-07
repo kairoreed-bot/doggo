@@ -13,7 +13,13 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { FlashList } from "@shopify/flash-list";
 import ScreenHeader from "../../components/common/ScreenHeader";
 import CharacterCard from "../../components/character/CharacterCard";
+import CharacterDiscoverActionsSheet from "../../components/character/CharacterDiscoverActionsSheet";
+import CharacterReportModal from "../../components/character/CharacterReportModal";
+import CustomAlert, {
+  type AlertButton,
+} from "../../components/common/CustomAlert";
 import { getMyCharacters } from "../../api/characters";
+import { getBlockedContent, updateBlockedContent } from "../../api/profile";
 import type { ProfileStackParamList } from "../../navigation/types";
 import type { TrendingCharacter } from "../../types/api";
 import { colors } from "../../utils/colors";
@@ -38,6 +44,14 @@ export default function MyCharactersScreen() {
   const [hasMore, setHasMore] = useState(true);
   const [filter, setFilter] = useState<PrivacyFilter>("all");
   const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
+  const [longPressCharacter, setLongPressCharacter] = useState<TrendingCharacter | null>(null);
+  const [actionsVisible, setActionsVisible] = useState(false);
+  const [reportVisible, setReportVisible] = useState(false);
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertTitle, setAlertTitle] = useState("");
+  const [alertMessage, setAlertMessage] = useState("");
+  const [alertButtons, setAlertButtons] = useState<AlertButton[]>([]);
 
   const filterLabel = useMemo(
     () => FILTER_OPTIONS.find((o) => o.key === filter)?.label ?? "All",
@@ -94,6 +108,80 @@ export default function MyCharactersScreen() {
     setFilterModalVisible(false);
   }, []);
 
+  const handleToggleHidden = useCallback((characterId: string) => {
+    setHiddenIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(characterId)) {
+        next.delete(characterId);
+      } else {
+        next.add(characterId);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleLongPress = useCallback((item: TrendingCharacter) => {
+    setLongPressCharacter(item);
+    setActionsVisible(true);
+  }, []);
+
+  const handleViewCharacter = useCallback(() => {
+    if (!longPressCharacter) return;
+    navigate("ProfileCharacterScreen", {
+      characterId: longPressCharacter.id,
+      characterName: longPressCharacter.name,
+    });
+  }, [longPressCharacter, navigate]);
+
+  const handleViewCreator = useCallback(() => {
+    if (!longPressCharacter?.creator_id) return;
+    navigate("CreatorScreen" as any, {
+      userId: longPressCharacter.creator_id,
+      userName: longPressCharacter.creator_name || "Creator",
+    });
+  }, [longPressCharacter, navigate]);
+
+  const handleBlockCharacter = useCallback(() => {
+    if (!longPressCharacter) return;
+    setAlertTitle("Block Character");
+    setAlertMessage(
+      `Block "${longPressCharacter.name}"? Hidden characters won't appear in your discover feed.`,
+    );
+    setAlertButtons([
+      {
+        text: "Block",
+        style: "destructive",
+        onPress: async () => {
+          setAlertVisible(false);
+          try {
+            const blocked = await getBlockedContent();
+            if (!blocked.bots.includes(longPressCharacter.id)) {
+              blocked.bots.push(longPressCharacter.id);
+            }
+            await updateBlockedContent(blocked);
+          } catch {}
+        },
+      },
+      { text: "Cancel", style: "cancel", onPress: () => setAlertVisible(false) },
+    ]);
+    setAlertVisible(true);
+  }, [longPressCharacter]);
+
+  const handleReportCharacter = useCallback(() => {
+    setActionsVisible(false);
+    setReportVisible(true);
+  }, []);
+
+  const handleActionsClose = useCallback(() => {
+    setActionsVisible(false);
+  }, []);
+
+  const handleAlertDismiss = useCallback(() => setAlertVisible(false), []);
+
+  const handleCloseReport = useCallback(() => {
+    setReportVisible(false);
+  }, []);
+
   const renderItem = useCallback(
     ({ item }: { item: TrendingCharacter }) => (
       <CharacterCard
@@ -104,9 +192,12 @@ export default function MyCharactersScreen() {
             characterName: item.name,
           })
         }
+        onLongPress={() => handleLongPress(item)}
+        hidden={hiddenIds.has(item.id)}
+        onToggleHidden={() => handleToggleHidden(item.id)}
       />
     ),
-    [navigate],
+    [navigate, handleLongPress, hiddenIds, handleToggleHidden],
   );
 
   const renderFooter = useCallback(() => {
@@ -203,6 +294,31 @@ export default function MyCharactersScreen() {
           </View>
         </Pressable>
       </Modal>
+
+      <CharacterDiscoverActionsSheet
+        visible={actionsVisible}
+        characterName={longPressCharacter?.name || ""}
+        hasCreator={!!longPressCharacter?.creator_id}
+        onClose={handleActionsClose}
+        onViewCharacter={handleViewCharacter}
+        onViewCreator={handleViewCreator}
+        onBlockCharacter={handleBlockCharacter}
+        onReportCharacter={handleReportCharacter}
+      />
+
+      <CharacterReportModal
+        visible={reportVisible}
+        characterId={longPressCharacter?.id ?? ""}
+        onClose={handleCloseReport}
+      />
+
+      <CustomAlert
+        visible={alertVisible}
+        title={alertTitle}
+        message={alertMessage}
+        buttons={alertButtons}
+        onDismiss={handleAlertDismiss}
+      />
     </View>
   );
 }

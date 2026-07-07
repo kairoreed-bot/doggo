@@ -26,7 +26,12 @@ import { useAuthStore } from "../../stores/authStore";
 import Avatar from "../../components/common/Avatar";
 import AvatarPreview from "../../components/common/AvatarPreview";
 import CharacterCard from "../../components/character/CharacterCard";
-import { getProfile, followUser, unfollowUser, getMyFollowing } from "../../api/profile";
+import CharacterDiscoverActionsSheet from "../../components/character/CharacterDiscoverActionsSheet";
+import CharacterReportModal from "../../components/character/CharacterReportModal";
+import CustomAlert, {
+  type AlertButton,
+} from "../../components/common/CustomAlert";
+import { getProfile, followUser, unfollowUser, getMyFollowing, getBlockedContent, updateBlockedContent } from "../../api/profile";
 import { getCharacters } from "../../api/characters";
 import { stripHtml } from "../../utils/markdown";
 import { assetUrl, avatarUrl } from "../../utils/assets";
@@ -122,6 +127,15 @@ export default function CreatorScreen() {
     null,
   );
 
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
+  const [longPressCharacter, setLongPressCharacter] = useState<TrendingCharacter | null>(null);
+  const [actionsVisible, setActionsVisible] = useState(false);
+  const [reportVisible, setReportVisible] = useState(false);
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertTitle, setAlertTitle] = useState("");
+  const [alertMessage, setAlertMessage] = useState("");
+  const [alertButtons, setAlertButtons] = useState<AlertButton[]>([]);
+
   const handleToggleFollow = useCallback(async () => {
     if (followingLoading) return;
     setFollowingLoading(true);
@@ -212,6 +226,80 @@ export default function CreatorScreen() {
     doFetch(1, true);
   }, [doFetch]);
 
+  const handleToggleHidden = useCallback((characterId: string) => {
+    setHiddenIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(characterId)) {
+        next.delete(characterId);
+      } else {
+        next.add(characterId);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleLongPress = useCallback((item: TrendingCharacter) => {
+    setLongPressCharacter(item);
+    setActionsVisible(true);
+  }, []);
+
+  const handleViewCharacter = useCallback(() => {
+    if (!longPressCharacter) return;
+    navigate(characterScreenName, {
+      characterId: longPressCharacter.id,
+      characterName: longPressCharacter.name,
+    });
+  }, [longPressCharacter, navigate, characterScreenName]);
+
+  const handleViewCreator = useCallback(() => {
+    if (!longPressCharacter?.creator_id) return;
+    navigate("CreatorScreen", {
+      userId: longPressCharacter.creator_id,
+      userName: longPressCharacter.creator_name || "Creator",
+    });
+  }, [longPressCharacter, navigate]);
+
+  const handleBlockCharacter = useCallback(() => {
+    if (!longPressCharacter) return;
+    setAlertTitle("Block Character");
+    setAlertMessage(
+      `Block "${longPressCharacter.name}"? Hidden characters won't appear in your discover feed.`,
+    );
+    setAlertButtons([
+      {
+        text: "Block",
+        style: "destructive",
+        onPress: async () => {
+          setAlertVisible(false);
+          try {
+            const blocked = await getBlockedContent();
+            if (!blocked.bots.includes(longPressCharacter.id)) {
+              blocked.bots.push(longPressCharacter.id);
+            }
+            await updateBlockedContent(blocked);
+          } catch {}
+        },
+      },
+      { text: "Cancel", style: "cancel", onPress: () => setAlertVisible(false) },
+    ]);
+    setAlertVisible(true);
+  }, [longPressCharacter]);
+
+  const handleReportCharacter = useCallback(() => {
+    setActionsVisible(false);
+    setReportVisible(true);
+  }, []);
+
+  const handleActionsClose = useCallback(() => {
+    setActionsVisible(false);
+  }, []);
+
+  const handleAlertDismiss = useCallback(() => setAlertVisible(false), []);
+
+  const handleCloseReport = useCallback(() => {
+    setReportVisible(false);
+  }, []);
+
   const renderItem = useCallback(
     ({ item }: { item: TrendingCharacter }) => (
       <CharacterCard
@@ -222,9 +310,12 @@ export default function CreatorScreen() {
             characterName: item.name,
           })
         }
+        onLongPress={() => handleLongPress(item)}
+        hidden={hiddenIds.has(item.id)}
+        onToggleHidden={() => handleToggleHidden(item.id)}
       />
     ),
-    [navigate, characterScreenName],
+    [navigate, characterScreenName, handleLongPress, hiddenIds, handleToggleHidden],
   );
 
   if (profileLoading) {
@@ -392,6 +483,31 @@ export default function CreatorScreen() {
         visible={preview !== null}
         uri={preview?.uri ?? ""}
         onClose={() => setPreview(null)}
+      />
+
+      <CharacterDiscoverActionsSheet
+        visible={actionsVisible}
+        characterName={longPressCharacter?.name || ""}
+        hasCreator={!!longPressCharacter?.creator_id}
+        onClose={handleActionsClose}
+        onViewCharacter={handleViewCharacter}
+        onViewCreator={handleViewCreator}
+        onBlockCharacter={handleBlockCharacter}
+        onReportCharacter={handleReportCharacter}
+      />
+
+      <CharacterReportModal
+        visible={reportVisible}
+        characterId={longPressCharacter?.id ?? ""}
+        onClose={handleCloseReport}
+      />
+
+      <CustomAlert
+        visible={alertVisible}
+        title={alertTitle}
+        message={alertMessage}
+        buttons={alertButtons}
+        onDismiss={handleAlertDismiss}
       />
     </View>
   );
