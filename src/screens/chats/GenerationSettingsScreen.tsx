@@ -85,7 +85,8 @@ export function fmtInt(v: number): string {
 }
 
 export default function GenerationSettingsScreen() {
-  const { goBack } = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<ChatsStackParamList, "GenerationSettings">>();
+  const { goBack } = navigation;
   const [config, setConfig] = useState<Config>(buildDefaultConfig);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
