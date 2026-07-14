@@ -80,9 +80,13 @@ function listReducer(state: ListState, action: ListAction): ListState {
       return { ...state, refreshing: true, error: null };
     case "LOADED": {
       const { data, total, page } = action.payload;
+      const existingIds = new Set(state.characters.map((c) => c.id));
       return {
         ...state,
-        characters: page === 1 ? data : [...state.characters, ...data],
+        characters:
+          page === 1
+            ? data
+            : [...state.characters, ...data.filter((d) => !existingIds.has(d.id))],
         total,
         page,
         loading: false,

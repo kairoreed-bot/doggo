@@ -352,7 +352,7 @@ export default function CreatorScreen() {
           size={80}
         />
       </Pressable>
-      <Text style={styles.profileName}>{profile.name}</Text>
+      <Text style={styles.profileName}>{profile.name || `@${profile.user_name}`}</Text>
       {profile.user_name ? (
         <Text style={styles.profileUsername}>@{profile.user_name}</Text>
       ) : null}
