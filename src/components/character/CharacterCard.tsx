@@ -81,7 +81,9 @@ export default function CharacterCard({
                     numberOfLines={1}
                   >
                     by {character.creator_name}
-                    {character.creator_verified ? " \u2713" : ""}
+                    {character.creator_verified ? (
+                      <Text style={styles.verified}> {"\u2713"}</Text>
+                    ) : null}
                     {character.creator_subscriber_badge ? (
                       <Text style={styles.subscriberBadge}> Subscriber</Text>
                     ) : null}
@@ -193,6 +195,10 @@ const styles = StyleSheet.create({
   subscriberBadge: {
     color: colors.accent,
     fontSize: 11,
+    fontWeight: "600",
+  },
+  verified: {
+    color: colors.accent,
     fontWeight: "600",
   },
   textHidden: {

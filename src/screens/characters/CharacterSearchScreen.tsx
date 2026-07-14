@@ -588,7 +588,7 @@ export default function CharacterSearchScreen() {
           numColumns={isTablet ? 2 : 1}
           key={isTablet ? "tablet-2col" : "phone-1col"}
           columnWrapperStyle={isTablet ? styles.columnWrapper : undefined}
-          estimatedItemSize={140}
+          estimatedItemSize={260}
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.5}
           drawDistance={800}
